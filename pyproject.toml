@@ -1,0 +1,6 @@
+[build-system]
+requires = [
+    "setuptools", 
+    "msgspec"
+]
+build-backend = "setuptools.build_meta"
