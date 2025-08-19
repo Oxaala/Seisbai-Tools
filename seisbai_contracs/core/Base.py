@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from uuid import UUID, uuid4
 from msgspec import Struct, field
 
-class Base(Struct, frozen=True):
+class Base(Struct, frozen=True, kw_only=True):
     """
     Uma classe base usada para definir propriedades comuns a comandos e eventos.
 

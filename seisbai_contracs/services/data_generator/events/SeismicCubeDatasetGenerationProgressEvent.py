@@ -1,9 +1,9 @@
 from typing import Optional
-from seisbai_contracs.core import Event
+from seisbai_contracs.core.Event import Event
 from uuid import UUID
 
 
-class SeismicCubeDatasetGenerationProgressEvent(Event, frozen=True):
+class SeismicCubeDatasetGenerationProgressEvent(Event, frozen=True, kw_only=True):
     """
     Evento de progresso periódico durante a geração de um dataset de cubo sísmico.
 

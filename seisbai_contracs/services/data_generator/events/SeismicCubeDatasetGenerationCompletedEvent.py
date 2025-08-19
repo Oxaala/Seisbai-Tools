@@ -1,9 +1,9 @@
-from seisbai_contracs.core import Event
+from seisbai_contracs.core.Event import Event
 from uuid import UUID
 from typing import List
 
 
-class SeismicCubeDatasetGenerationCompletedEvent(Event, frozen=True):
+class SeismicCubeDatasetGenerationCompletedEvent(Event, frozen=True, kw_only=True):
     """
     Evento emitido quando a geração de um dataset de cubo sísmico termina com sucesso.
 

@@ -1,11 +1,14 @@
 from typing import Optional, Sequence, Tuple, Union
 from uuid import UUID, uuid4
 from msgspec import Struct, field
-from seisbai_contracs.core import Command
-from DTOs import SeismicCubeParamsDTO, GaussianDeformationParamsDTO, FaultDeformationParamsDTO, PlanarDeformationParamsDTO
+from seisbai_contracs.core.Command import Command
+from DTOs.FaultDeformationParamsDTO import FaultDeformationParamsDTO
+from DTOs.GaussianDeformationParamsDTO import GaussianDeformationParamsDTO
+from DTOs.PlanarDeformationParamsDTO import PlanarDeformationParamsDTO
+from DTOs.SeismicCubeParamsDTO import SeismicCubeParamsDTO
 
 
-class TransformationStep(Struct, frozen=True):
+class TransformationStep(Struct, frozen=True, kw_only=True):
     """
     Representa uma etapa de transformação a ser aplicada no cubo sísmico.
 

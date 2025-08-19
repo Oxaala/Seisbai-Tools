@@ -1,6 +1,6 @@
 from seisbai_contracs.core.Base import Base
 
-class Command(Base, frozen=True):
+class Command(Base, frozen=True, kw_only=True):
     """
     Representa um **comando** no sistema.
 

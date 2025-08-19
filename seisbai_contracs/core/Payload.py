@@ -12,7 +12,7 @@ Services = Literal["DataGenerator", "FaultDetector", "HorizonInterpolator"]
 
 T = TypeVar("T")
 
-class Payload(Base, frozen=True):
+class Payload(Base, frozen=True, kw_only=True):
     """
     Representa um **payload** genérico enviado no sistema.
 
