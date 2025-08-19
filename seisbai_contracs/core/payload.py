@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Type, TypeVar
+from typing import Any, Dict, List, Literal, Type, TypeVar
 from uuid import UUID
 
 from msgspec import field
@@ -8,7 +8,9 @@ from .base import Base
 # Registro global de DTOs para deserialização
 _relations: Dict[str, Type[Any]] = {}
 
-Services = Literal["DataGenerator", "FaultDetector", "HorizonInterpolator"]
+Service = Literal["DataGenerator", "FaultDetector", "HorizonInterpolator"]
+
+services: List[Service] = ["DataGenerator", "FaultDetector", "HorizonInterpolator"]
 
 T = TypeVar("T")
 
@@ -48,7 +50,7 @@ class Payload(Base, frozen=True, kw_only=True):
 
     token: str = field() #type: ignore
     user_id: UUID = field() #type: ignore
-    service: Services = field() #type: ignore
+    service: Service = field() #type: ignore
     dto_name: str = field() #type: ignore
     data: bytes = field() #type: ignore
 
