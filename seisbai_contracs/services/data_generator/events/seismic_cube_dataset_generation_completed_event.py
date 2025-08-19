@@ -1,4 +1,4 @@
-from seisbai_contracs.core.Event import Event
+from seisbai_contracs.core import Event
 from uuid import UUID
 from typing import List
 

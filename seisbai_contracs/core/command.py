@@ -1,4 +1,4 @@
-from seisbai_contracs.core.Base import Base
+from .base import Base
 
 class Command(Base, frozen=True, kw_only=True):
     """

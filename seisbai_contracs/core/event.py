@@ -1,6 +1,6 @@
 from uuid import UUID
 from msgspec import field
-from seisbai_contracs.core.Base import Base
+from .base import Base
 
 class Event(Base, frozen=True, kw_only=True):
     """

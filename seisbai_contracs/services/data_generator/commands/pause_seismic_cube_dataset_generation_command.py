@@ -1,5 +1,5 @@
 from uuid import UUID
-from seisbai_contracs.core.Command import Command
+from seisbai_contracs.core import Command
 
 
 class PauseSeismicCubeDatasetGenerationCommand(Command, frozen=True, kw_only=True):

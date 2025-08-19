@@ -1,11 +1,8 @@
 from typing import Optional, Sequence, Tuple, Union
 from uuid import UUID, uuid4
 from msgspec import Struct, field
-from seisbai_contracs.core.Command import Command
-from seisbai_contracs.services.data_generator.DTOs.FaultDeformationParamsDTO import FaultDeformationParamsDTO
-from seisbai_contracs.services.data_generator.DTOs.GaussianDeformationParamsDTO import GaussianDeformationParamsDTO
-from seisbai_contracs.services.data_generator.DTOs.PlanarDeformationParamsDTO import PlanarDeformationParamsDTO
-from seisbai_contracs.services.data_generator.DTOs.SeismicCubeParamsDTO import SeismicCubeParamsDTO
+from seisbai_contracs.core import Command
+from seisbai_contracs.services.data_generator.DTOs import GaussianDeformationParamsDTO,FaultDeformationParamsDTO,PlanarDeformationParamsDTO,SeismicCubeParamsDTO
 
 
 class TransformationStep(Struct, frozen=True, kw_only=True):

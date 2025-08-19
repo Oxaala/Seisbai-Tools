@@ -3,7 +3,7 @@ from uuid import UUID
 
 from msgspec import field
 import msgspec
-from seisbai_contracs.core.Base import Base
+from .base import Base
 
 # Registro global de DTOs para deserialização
 _relations: Dict[str, Type[Any]] = {}

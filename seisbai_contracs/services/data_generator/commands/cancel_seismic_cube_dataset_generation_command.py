@@ -2,7 +2,7 @@ from msgspec import field
 from typing import Optional
 from uuid import UUID
 
-from seisbai_contracs.core.Command import Command
+from seisbai_contracs.core import Command
 
 
 class CancelSeismicCubeDatasetGenerationCommand(Command, frozen=True, kw_only=True):

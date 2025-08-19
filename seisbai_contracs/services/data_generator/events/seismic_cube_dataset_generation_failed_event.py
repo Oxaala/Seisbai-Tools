@@ -1,6 +1,6 @@
 from typing import Optional
 from uuid import UUID
-from seisbai_contracs.core.Event import Event
+from seisbai_contracs.core import Event
 
 
 class SeismicCubeDatasetGenerationFailedEvent(Event, frozen=True, kw_only=True):
