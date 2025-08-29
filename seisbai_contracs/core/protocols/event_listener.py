@@ -1,5 +1,5 @@
 from typing import Any, Protocol, TypeVar
-from seisbai_contracs.core.artefacts.event import Event
+from seisbai_contracs.core.artefacts.events.event import Event
 
 # Tipo genérico para eventos, restrito a subclasses de Event.
 # O `contravariant=True` significa que podemos usar um listener

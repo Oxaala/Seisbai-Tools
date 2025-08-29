@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Protocol, TypeVar
 
-from seisbai_contracs.core.artefacts.event import Event
+from seisbai_contracs.core.artefacts.events.event import Event
 from seisbai_contracs.core.protocols.event_listener import EventListenerProtocol
 
 # Tipo genérico para eventos, restrito a subclasses de Event

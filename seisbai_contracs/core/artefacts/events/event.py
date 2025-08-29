@@ -1,6 +1,6 @@
 from uuid import UUID
 from msgspec import field
-from .base import Base
+from seisbai_contracs.core.artefacts.base import Base
 
 class Event(Base, frozen=True, kw_only=True):
     """
@@ -36,5 +36,5 @@ class Event(Base, frozen=True, kw_only=True):
         Pode ser ``None`` em eventos iniciais.
     """
 
-    correlation_id: UUID = field() #type: ignore
-    causation_id: UUID = field() #type: ignore
+    correlation_id: UUID = field()
+    causation_id: UUID = field()
