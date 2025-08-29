@@ -8,7 +8,8 @@ class Base(Struct, frozen=True, kw_only=True):
 
     Esta classe serve como um "contrato" inicial para outras entidades
     do sistema (como comandos ou eventos), garantindo que todas elas
-    possuam um identificador único e um carimbo de tempo (timestamp).
+    possuam um identificador único, um carimbo de tempo (timestamp)
+    e uma mensagem descritiva.
 
     A biblioteca `msgspec` é utilizada em vez de `dataclasses` ou `pydantic`
     por ser extremamente rápida e otimizada para serialização e validação
@@ -24,7 +25,13 @@ class Base(Struct, frozen=True, kw_only=True):
     timestamp : datetime.datetime
         Data e hora exata da criação do objeto, em UTC.  
         Essencial para ordenação temporal, auditoria, debugging e mensageria.
+
+    message : str
+        Mensagem ou descrição associada ao comando/evento.  
+        Pode ser usada para logs, depuração, rastreamento ou
+        como metadado adicional da instância.
     """
 
     id: UUID = field(default_factory=lambda: uuid4())
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    message: str = field(default="")
