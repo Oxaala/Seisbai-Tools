@@ -1,40 +1,49 @@
+from typing import Optional
 from seisbai_contracs.core.protocols.command_bus import CommandBusProtocol
 from seisbai_contracs.core.protocols.event_bus import EventBusProtocol
 from seisbai_contracs.core.protocols.payload_bus import PayloadBusProtocol
-from . import _state
 
 
-def set_payload_bus(payload_bus: PayloadBusProtocol) -> None:
-    """
-    Define a implementação global de PayloadBus a ser usada pela biblioteca.
+class BusManager:
+    _instance: Optional["BusManager"] = None
+    _command_bus: Optional[CommandBusProtocol]
+    _event_bus: Optional[EventBusProtocol]
+    _payload_bus: Optional[PayloadBusProtocol]
 
-    Args:
-        payload_bus: Implementação concreta de PayloadBusProtocol.
-    """
-    if _state.payload_bus is not None:
-        raise RuntimeError("PayloadBus já foi configurado.")
-    _state.payload_bus = payload_bus
+    def __new__(cls) -> "BusManager":
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._command_bus = None
+            cls._instance._event_bus = None
+            cls._instance._payload_bus = None
+        return cls._instance
 
+    def set_command_bus(self, bus: CommandBusProtocol) -> None:
+        if self._command_bus is not None:
+            raise RuntimeError("Command bus has already been configured.")
+        self._command_bus = bus
 
-def set_command_bus(command_bus: CommandBusProtocol) -> None:
-    """
-    Define a implementação global de CommandBus a ser usada pela biblioteca.
+    def get_command_bus(self) -> CommandBusProtocol:
+        if self._command_bus is None:
+            raise ValueError("Command bus has not been configured. Use set_command_bus first.")
+        return self._command_bus
 
-    Args:
-        command_bus: Implementação concreta de CommandBusProtocol.
-    """
-    if _state.command_bus is not None:
-        raise RuntimeError("CommandBus já foi configurado.")
-    _state.command_bus = command_bus
+    def set_event_bus(self, bus: EventBusProtocol) -> None:
+        if self._event_bus is not None:
+            raise RuntimeError("Event bus has already been configured.")
+        self._event_bus = bus
 
+    def get_event_bus(self) -> EventBusProtocol:
+        if self._event_bus is None:
+            raise ValueError("Event bus has not been configured. Use set_event_bus first.")
+        return self._event_bus
 
-def set_event_bus(event_bus: EventBusProtocol) -> None:
-    """
-    Define a implementação global de EventBus a ser usada pela biblioteca.
+    def set_payload_bus(self, bus: PayloadBusProtocol) -> None:
+        if self._payload_bus is not None:
+            raise RuntimeError("Payload bus has already been configured.")
+        self._payload_bus = bus
 
-    Args:
-        event_bus: Implementação concreta de EventBusProtocol.
-    """
-    if _state.event_bus is not None:
-        raise RuntimeError("EventBus já foi configurado.")
-    _state.event_bus = event_bus
+    def get_payload_bus(self) -> PayloadBusProtocol:
+        if self._payload_bus is None:
+            raise RuntimeError("Payload bus has not been configured. Use set_payload_bus first.")
+        return self._payload_bus

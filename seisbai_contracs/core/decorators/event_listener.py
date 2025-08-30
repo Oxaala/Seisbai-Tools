@@ -1,6 +1,6 @@
 from typing import Type
+from seisbai_contracs.config.buses import BusManager
 from seisbai_contracs.core.protocols.event_listener import EventListenerProtocol, E
-from seisbai_contracs.config import _state
 
 
 def eventListener(event: Type[E]):
@@ -19,12 +19,7 @@ def eventListener(event: Type[E]):
         ...     print(f"Novo usuário criado: {event.user_id}")
     """
     def decorator(function: EventListenerProtocol[E]) -> EventListenerProtocol[E]:
-        if _state.event_bus is None:
-            raise ValueError(
-                "Event bus has not been configured. Use set_event_bus first."
-            )
-
-        _state.event_bus.subscribe(event.__name__, function)
+        BusManager().get_event_bus().subscribe(event.__name__, function)
         return function
 
     return decorator

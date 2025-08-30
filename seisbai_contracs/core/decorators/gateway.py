@@ -1,5 +1,5 @@
+from seisbai_contracs.config.buses import BusManager
 from seisbai_contracs.core.protocols.gateway import GatewayProtocol, P
-from seisbai_contracs.config import _state
 
 
 def gateway(service: str):
@@ -19,12 +19,7 @@ def gateway(service: str):
         ...     return {"id": 123, **data}
     """
     def decorator(function: GatewayProtocol[P]) -> GatewayProtocol[P]:
-        if _state.payload_bus is None:
-            raise ValueError(
-                "Payload bus has not been configured. Use set_payload_bus first."
-            )
-
-        _state.payload_bus.subscribe(service, function)
+        BusManager().get_payload_bus().subscribe(service, function)
         return function
 
     return decorator

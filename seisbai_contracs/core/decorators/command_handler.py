@@ -1,6 +1,6 @@
 from typing import Type
+from seisbai_contracs.config.buses import BusManager
 from seisbai_contracs.core.protocols.command_handler import CommandHandlerProtocol, C
-from seisbai_contracs.config import _state
 
 
 def commandHandler(command: Type[C]):
@@ -19,12 +19,7 @@ def commandHandler(command: Type[C]):
         ...     print(f"Criando usuário {cmd.user_id}")
     """
     def decorator(function: CommandHandlerProtocol[C]) -> CommandHandlerProtocol[C]:
-        if _state.command_bus is None:
-            raise ValueError(
-                "Command bus has not been configured. Use set_command_bus first."
-            )
-
-        _state.command_bus.subscribe(command.__name__, function)
+        BusManager().get_command_bus().subscribe(command.__name__, function)
         return function
 
     return decorator
