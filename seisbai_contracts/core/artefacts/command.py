@@ -1,6 +1,8 @@
 from .base import Base
+from seisbai_contracts.core.mixins import CommandAutoPublisherMixin
 
-class Command(Base, frozen=True, kw_only=True):
+
+class Command(Base, CommandAutoPublisherMixin, frozen=True, kw_only=True):
     """
     Representa um **comando** no sistema.
 

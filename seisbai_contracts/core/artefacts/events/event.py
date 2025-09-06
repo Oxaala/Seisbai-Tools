@@ -1,9 +1,10 @@
 from uuid import UUID
 from msgspec import field
 from seisbai_contracts.core.artefacts.base import Base
+from seisbai_contracts.core.mixins import EventAutoPublisherMixin
 
 
-class Event(Base, frozen=True, kw_only=True):
+class Event(Base, EventAutoPublisherMixin, frozen=True, kw_only=True):
     """
     Representa um **evento** no sistema.
 

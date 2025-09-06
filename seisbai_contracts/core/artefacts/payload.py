@@ -5,6 +5,7 @@ from msgspec import field
 import msgspec
 from .base import Base
 import importlib
+from seisbai_contracts.core.mixins import PayloadAutoPublisherMixin
 
 
 def get_import_path(cls: type) -> str:
@@ -61,7 +62,7 @@ T = TypeVar("T")
 """Tipo genérico usado para parametrizar DTOs."""
 
 
-class Payload(Base, frozen=True, kw_only=True):
+class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
     """
     Representa um **payload** genérico enviado no sistema.
 
