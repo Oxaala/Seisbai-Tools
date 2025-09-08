@@ -1,6 +1,5 @@
 from typing import List, Literal, Optional, Type, TypeVar
 from uuid import UUID
-
 from msgspec import field
 import msgspec
 from .base import Base
@@ -8,7 +7,7 @@ import importlib
 from seisbai_contracts.core.mixins import PayloadAutoPublisherMixin
 
 
-def get_import_path(cls: type) -> str:
+def _get_import_path(cls: type) -> str:
     """
     Retorna o caminho de importação completo de uma classe.
 
@@ -25,7 +24,7 @@ def get_import_path(cls: type) -> str:
     return f"{cls.__module__}.{cls.__qualname__}"
 
 
-def import_type(path: str) -> type:
+def _import_type(path: str) -> type:
     """
     Importa dinamicamente um tipo a partir de seu caminho completo.
 
@@ -69,16 +68,8 @@ class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
     O payload contém os dados de negócio ou de controle associados a um comando
     ou evento. Ele herda de :class:`Base`, possuindo também ``id`` e ``timestamp``.
 
-    Todos os campos devem ser fornecidos na criação do objeto, nenhum é opcional.
-
     Attributes
     ----------
-    id : uuid.UUID
-        Identificador único do payload, herdado de :class:`Base`.
-
-    timestamp : datetime.datetime
-        Data e hora exata da criação do payload, em UTC, herdado de :class:`Base`.
-
     token : str
         Token de autenticação. Deve ser fornecido na criação do Payload.
 
@@ -88,29 +79,50 @@ class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
     service : Literal["DataGenerator", "FaultDetector", "HorizonInterpolator"]
         Serviço de destino do payload. Deve ser um dos valores listados.
 
-    dto_path : str
-        Caminho de importação completo (ex.: ``meu_modulo.submodulo.ClasseDTO``)
-        da classe DTO associada a este payload. Usado para reconstruir
-        automaticamente o tipo do DTO na desserialização.
+    data : T
+        Objeto de dados (DTO) associado ao payload. Pode ser qualquer tipo
+        serializável em JSON pelo ``msgspec``.
 
-    dto_name : str
-        Nome do DTO (Data Transfer Object) associado a este payload.
-        Útil para fins de auditoria e identificação sem precisar importar o tipo.
-
-    data : bytes
-        Conteúdo bruto do objeto contendo os dados serializados em JSON.
+    send : bool
+        Indica se o payload deve ser efetivamente publicado no EventBus.
+        Útil para cenários de teste ou controle de fluxo. Valor padrão: ``True``.
     """
 
-    token: str = field()  # type: ignore
-    user_id: UUID = field()  # type: ignore
-    service: Service = field()  # type: ignore
-    dto_path: str = field()  # type: ignore
-    dto_name: str = field()  # type: ignore
-    data: bytes = field()  # type: ignore
+    token: str = field()
+    user_id: UUID = field()
+    service: Service = field()
+    data: T = field()
+    send: bool = field(default=True)
+
+    @property
+    def _dto_path(self) -> str:
+        """
+        Caminho de importação completo do DTO associado a ``data``.
+
+        Exemplo
+        -------
+        ``meu_modulo.submodulo.ClasseDTO``
+        """
+        return _get_import_path(type(self.data))
+
+    @property
+    def _encoded_data(self) -> bytes:
+        """
+        Representação serializada do ``data`` em JSON (bytes).
+
+        Returns
+        -------
+        bytes
+            Conteúdo JSON serializado. Se ``data`` já for ``bytes``,
+            retorna o valor original.
+        """
+        if isinstance(self.data, bytes):
+            return self.data
+        return msgspec.json.encode(self.data)
 
     def serialize(self) -> bytes:
         """
-        Serializa o Payload em JSON como bytes.
+        Serializa o Payload inteiro em JSON (bytes).
 
         Returns
         -------
@@ -121,16 +133,16 @@ class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
 
     def deserialize(self, dto_type: Optional[Type[T]] = None) -> T:
         """
-        Deserializa o conteúdo JSON do campo ``data`` em um DTO.
+        Desserializa o conteúdo do campo ``data`` em um DTO.
 
         Se nenhum tipo for informado, a função utilizará automaticamente
-        o caminho definido em ``dto_path`` para importar o DTO correto.
+        o caminho definido em ``_dto_path`` para importar o tipo correto.
 
         Parameters
         ----------
         dto_type : Type[T], optional
-            O tipo de DTO esperado. Caso não seja fornecido, será usado
-            o tipo indicado em ``dto_path``.
+            Tipo esperado para o DTO. Caso não seja fornecido, será usado
+            o tipo indicado por ``_dto_path``.
 
         Returns
         -------
@@ -140,10 +152,10 @@ class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
         Raises
         ------
         ValueError
-            Se não for possível importar o tipo especificado em ``dto_path``
+            Se não for possível importar o tipo especificado em ``_dto_path``
             ou se o JSON contido em ``data`` não corresponder à estrutura esperada.
         """
         if dto_type is None:
-            dto_type = import_type(self.dto_path)
+            dto_type = _import_type(self._dto_path)
 
-        return msgspec.json.decode(self.data, type=dto_type)
+        return msgspec.json.decode(self._encoded_data, type=dto_type)
