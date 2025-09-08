@@ -1,7 +1,9 @@
-from typing import List, Literal, Optional, Type, TypeVar
+from typing import Optional, Type, TypeVar
 from uuid import UUID
 from msgspec import field
 import msgspec
+
+from seisbai_contracts.config.services import Services
 from .base import Base
 import importlib
 from seisbai_contracts.core.mixins import PayloadAutoPublisherMixin
@@ -49,14 +51,6 @@ def _import_type(path: str) -> type:
     module = importlib.import_module(module_name)
     return getattr(module, class_name)
 
-
-Service = Literal["DataGenerator", "FaultDetector", "HorizonInterpolator"]
-"""Tipo literal que representa os serviços válidos no sistema."""
-
-services: List[Service] = ["DataGenerator", "FaultDetector", "HorizonInterpolator"]
-"""Lista de serviços suportados pelo sistema."""
-
-
 T = TypeVar("T")
 """Tipo genérico usado para parametrizar DTOs."""
 
@@ -90,7 +84,7 @@ class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
 
     token: str = field()
     user_id: UUID = field()
-    service: Service = field()
+    service: Services = field()
     data: T = field()
     send: bool = field(default=True)
 
