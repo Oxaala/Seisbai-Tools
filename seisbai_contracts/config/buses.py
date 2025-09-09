@@ -1,22 +1,14 @@
 from typing import Optional
+from seisbai_contracts.core.interfaces.singleton import SingletonMeta
 from seisbai_contracts.core.protocols.command_bus import CommandBusProtocol
 from seisbai_contracts.core.protocols.event_bus import EventBusProtocol
 from seisbai_contracts.core.protocols.payload_bus import PayloadBusProtocol
 
 
-class BusManager:
-    _instance: Optional["BusManager"] = None
-    _command_bus: Optional[CommandBusProtocol]
-    _event_bus: Optional[EventBusProtocol]
-    _payload_bus: Optional[PayloadBusProtocol]
-
-    def __new__(cls) -> "BusManager":
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._command_bus = None
-            cls._instance._event_bus = None
-            cls._instance._payload_bus = None
-        return cls._instance
+class BusManager(metaclass=SingletonMeta):
+    _command_bus: Optional[CommandBusProtocol] = None
+    _event_bus: Optional[EventBusProtocol] = None
+    _payload_bus: Optional[PayloadBusProtocol] = None
 
     def set_command_bus(self, bus: CommandBusProtocol) -> None:
         if self._command_bus is not None:
