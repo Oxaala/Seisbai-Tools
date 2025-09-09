@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Callable
 
-from seisbai_contracts.core.interfaces.singleton import SingletonMeta
+from .singleton import SingletonMeta
 
 
 class IPublishSubscribe(ABC, metaclass=SingletonMeta):

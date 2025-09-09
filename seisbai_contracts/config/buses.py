@@ -1,5 +1,5 @@
 from typing import Optional
-from seisbai_contracts.core.interfaces.singleton import SingletonMeta
+from seisbai_contracts.interfaces.singleton import SingletonMeta
 from seisbai_contracts.core.protocols.command_bus import CommandBusProtocol
 from seisbai_contracts.core.protocols.event_bus import EventBusProtocol
 from seisbai_contracts.core.protocols.payload_bus import PayloadBusProtocol
