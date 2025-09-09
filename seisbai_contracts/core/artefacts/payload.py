@@ -2,8 +2,6 @@ from typing import Optional, Type, TypeVar
 from uuid import UUID
 from msgspec import field
 import msgspec
-
-from seisbai_contracts.config.services import Services
 from .base import Base
 import importlib
 from seisbai_contracts.core.mixins import PayloadAutoPublisherMixin
@@ -51,6 +49,7 @@ def _import_type(path: str) -> type:
     module = importlib.import_module(module_name)
     return getattr(module, class_name)
 
+
 T = TypeVar("T")
 """Tipo genérico usado para parametrizar DTOs."""
 
@@ -59,32 +58,70 @@ class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
     """
     Representa um **payload** genérico enviado no sistema.
 
-    O payload contém os dados de negócio ou de controle associados a um comando
-    ou evento. Ele herda de :class:`Base`, possuindo também ``id`` e ``timestamp``.
+    Um *payload* encapsula os dados de negócio ou controle associados a
+    comandos e eventos. Ele herda de :class:`Base`, garantindo que possua
+    também ``id`` e ``timestamp``. Além disso, incorpora o mixin
+    :class:`PayloadAutoPublisherMixin`, que pode publicar o payload
+    automaticamente em um *bus* configurado.
 
     Attributes
     ----------
     token : str
-        Token de autenticação. Deve ser fornecido na criação do Payload.
+        Token de autenticação fornecido no momento da criação.
 
     user_id : UUID
-        Identificador único do usuário. Deve ser fornecido na criação do Payload.
-
-    service : Literal["DataGenerator", "FaultDetector", "HorizonInterpolator"]
-        Serviço de destino do payload. Deve ser um dos valores listados.
+        Identificador único do usuário associado ao payload.
 
     data : T
-        Objeto de dados (DTO) associado ao payload. Pode ser qualquer tipo
-        serializável em JSON pelo ``msgspec``.
+        Objeto de dados (DTO) encapsulado no payload. Deve ser serializável
+        em JSON pelo ``msgspec``. Pode ser qualquer dataclass ou estrutura
+        compatível.
 
-    send : bool
-        Indica se o payload deve ser efetivamente publicado no EventBus.
-        Útil para cenários de teste ou controle de fluxo. Valor padrão: ``True``.
+    send : bool, default=True
+        Define se o payload deve ser efetivamente publicado no
+        :class:`PayloadBusProtocol`. Útil para cenários de teste ou
+        quando se deseja apenas instanciar o payload sem enviá-lo.
+
+    Properties
+    ----------
+    _dto_path : str
+        Caminho de importação completo do tipo do DTO associado a ``data``.
+        Ex.: ``meu_modulo.submodulo.ClasseDTO``.
+
+    _encoded_data : bytes
+        Representação serializada de ``data`` em JSON. Se ``data`` já for
+        do tipo ``bytes``, retorna o valor original.
+
+    Methods
+    -------
+    serialize() -> bytes
+        Serializa o payload inteiro em JSON (incluindo metadados e o DTO).
+
+    deserialize(dto_type: Optional[Type[T]] = None) -> T
+        Desserializa o conteúdo de ``data`` em uma instância do tipo DTO
+        especificado. Se ``dto_type`` não for informado, o tipo é
+        determinado automaticamente a partir de ``_dto_path``.
+
+    Examples
+    --------
+    >>> from uuid import uuid4
+    >>> from dataclasses import dataclass
+    >>> 
+    >>> @dataclass
+    ... class DummyDTO:
+    ...     value: int
+    ...     text: str
+    ...
+    >>> dto = DummyDTO(value=42, text="hello")
+    >>> payload = Payload(token="abc123", user_id=uuid4(), data=dto)
+    >>> raw = payload.serialize()
+    >>> decoded = payload.deserialize(DummyDTO)
+    >>> assert isinstance(decoded, DummyDTO)
+    >>> assert decoded.value == 42
     """
 
     token: str = field()
     user_id: UUID = field()
-    service: Services = field()
     data: T = field()
     send: bool = field(default=True)
 
@@ -93,22 +130,23 @@ class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
         """
         Caminho de importação completo do DTO associado a ``data``.
 
-        Exemplo
+        Returns
         -------
-        ``meu_modulo.submodulo.ClasseDTO``
+        str
+            Caminho no formato ``modulo.submodulo.ClasseDTO``.
         """
         return _get_import_path(type(self.data))
 
     @property
     def _encoded_data(self) -> bytes:
         """
-        Representação serializada do ``data`` em JSON (bytes).
+        Representação serializada do ``data`` em JSON.
 
         Returns
         -------
         bytes
-            Conteúdo JSON serializado. Se ``data`` já for ``bytes``,
-            retorna o valor original.
+            Conteúdo JSON serializado em bytes. Se ``data`` já for
+            ``bytes``, retorna o valor original sem transformação.
         """
         if isinstance(self.data, bytes):
             return self.data
@@ -116,12 +154,12 @@ class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
 
     def serialize(self) -> bytes:
         """
-        Serializa o Payload inteiro em JSON (bytes).
+        Serializa o payload inteiro (metadados + DTO) em JSON.
 
         Returns
         -------
         bytes
-            Representação JSON do Payload serializado.
+            Representação JSON serializada do payload.
         """
         return msgspec.json.encode(self)
 
@@ -129,14 +167,11 @@ class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
         """
         Desserializa o conteúdo do campo ``data`` em um DTO.
 
-        Se nenhum tipo for informado, a função utilizará automaticamente
-        o caminho definido em ``_dto_path`` para importar o tipo correto.
-
         Parameters
         ----------
         dto_type : Type[T], optional
-            Tipo esperado para o DTO. Caso não seja fornecido, será usado
-            o tipo indicado por ``_dto_path``.
+            Tipo esperado para o DTO. Se não for informado, o tipo é
+            inferido automaticamente a partir de ``_dto_path``.
 
         Returns
         -------
@@ -146,8 +181,8 @@ class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
         Raises
         ------
         ValueError
-            Se não for possível importar o tipo especificado em ``_dto_path``
-            ou se o JSON contido em ``data`` não corresponder à estrutura esperada.
+            Se não for possível importar o tipo em ``_dto_path`` ou se o
+            conteúdo JSON não corresponder à estrutura esperada.
         """
         if dto_type is None:
             dto_type = _import_type(self._dto_path)
