@@ -1,8 +1,9 @@
+from typing import Type
 from seisbai_contracts.config.buses import BusManager
 from seisbai_contracts.core.protocols.gateway import GatewayProtocol, P
 
 
-def gateway(service: str):
+def gateway(payload: Type[P]):
     """
     Decorador para registrar uma função como um gateway em um serviço específico.
 
@@ -19,7 +20,7 @@ def gateway(service: str):
         ...     return {"id": 123, **data}
     """
     def decorator(function: GatewayProtocol[P]) -> GatewayProtocol[P]:
-        BusManager().get_payload_bus().subscribe(service, function)
+        BusManager().get_payload_bus().subscribe(payload.__name__, function)
         return function
 
     return decorator
