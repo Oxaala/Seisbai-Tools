@@ -31,5 +31,4 @@ class EventAutoPublisherMixin:
         # às superclasses até chegar em Event
         for cls in self.__class__.mro():
             if issubclass(cls, Event):
-                print(f"Publicou em {cls.__name__}\n")
                 bus.publish(cls.__name__, cast(Event, self))
