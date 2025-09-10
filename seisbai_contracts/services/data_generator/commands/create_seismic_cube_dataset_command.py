@@ -1,7 +1,7 @@
 from typing import Optional, Sequence, Tuple, Union
 from uuid import UUID, uuid4
 from msgspec import Struct, field
-from seisbai_contracts.core import Command
+from seisbai_contracts.core.artefacts.commands.start import StartCommand
 from seisbai_contracts.services.data_generator.DTOs import GaussianDeformationParamsDTO,FaultDeformationParamsDTO,PlanarDeformationParamsDTO,SeismicCubeParamsDTO
 
 
@@ -26,7 +26,7 @@ class TransformationStep(Struct, frozen=True, kw_only=True):
     ]
 
 
-class CreateSeismicCubeDatasetCommand(Command, frozen=True):
+class CreateSeismicCubeDatasetCommand(StartCommand, frozen=True):
     """
     Comando que inicia a geração de um dataset de cubos sísmicos sintéticos.
 

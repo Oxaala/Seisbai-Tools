@@ -1,8 +1,8 @@
-from seisbai_contracts.core import Event
+from seisbai_contracts.core.artefacts.events import ResumedEvent
 from uuid import UUID
 
 
-class SeismicCubeDatasetGenerationResumedEvent(Event, frozen=True, kw_only=True):
+class SeismicCubeDatasetGenerationResumedEvent(ResumedEvent, frozen=True, kw_only=True):
     """
     Evento emitido quando a geração de um dataset de cubo sísmico é retomada.
 

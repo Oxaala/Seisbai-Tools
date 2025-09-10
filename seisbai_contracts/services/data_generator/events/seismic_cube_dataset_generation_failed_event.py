@@ -1,9 +1,9 @@
 from typing import Optional
 from uuid import UUID
-from seisbai_contracts.core import Event
+from seisbai_contracts.core.artefacts.events.failed import FailedEvent
 
 
-class SeismicCubeDatasetGenerationFailedEvent(Event, frozen=True, kw_only=True):
+class SeismicCubeDatasetGenerationFailedEvent(FailedEvent, frozen=True, kw_only=True):
     """
     Evento emitido quando ocorre uma falha na geração de um dataset de cubo sísmico.
 

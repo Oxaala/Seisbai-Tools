@@ -1,9 +1,9 @@
 from typing import Optional, Tuple
 from uuid import UUID
-from seisbai_contracts.core import Event
+from seisbai_contracts.core.artefacts.events.started import StartedEvent
 
 
-class SeismicCubeDatasetGenerationStartedEvent(Event, frozen=True, kw_only=True):
+class SeismicCubeDatasetGenerationStartedEvent(StartedEvent, frozen=True, kw_only=True):
     """
     Evento emitido quando a geração de um dataset de cubo sísmico é iniciada.
 

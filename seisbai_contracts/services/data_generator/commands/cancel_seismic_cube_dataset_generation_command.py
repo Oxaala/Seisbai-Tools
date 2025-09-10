@@ -1,11 +1,10 @@
 from msgspec import field
 from typing import Optional
 from uuid import UUID
+from seisbai_contracts.core.artefacts.commands.cancel import CancelCommand
 
-from seisbai_contracts.core import Command
 
-
-class CancelSeismicCubeDatasetGenerationCommand(Command, frozen=True, kw_only=True):
+class CancelSeismicCubeDatasetGenerationCommand(CancelCommand, frozen=True, kw_only=True):
     """
     Comando que solicita o cancelamento da geração de um dataset de cubo sísmico.
 

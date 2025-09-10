@@ -1,8 +1,8 @@
-from seisbai_contracts.core import Event
 from uuid import UUID
+from seisbai_contracts.core.artefacts.events.paused import PausedEvent
 
 
-class SeismicCubeDatasetGenerationPausedEvent(Event, frozen=True, kw_only=True):
+class SeismicCubeDatasetGenerationPausedEvent(PausedEvent, frozen=True, kw_only=True):
     """
     Evento emitido quando a geração de um dataset de cubo sísmico é pausada.
 

@@ -1,8 +1,8 @@
 from uuid import UUID
-from seisbai_contracts.core import Command
+from seisbai_contracts.core.artefacts.commands.resume import ResumeCommand
 
 
-class ResumeSeismicCubeDatasetGenerationCommand(Command, frozen=True, kw_only=True):
+class ResumeSeismicCubeDatasetGenerationCommand(ResumeCommand, frozen=True, kw_only=True):
     """
     Comando para retomar a geração de um dataset de cubo sísmico.
 

@@ -1,8 +1,8 @@
 from uuid import UUID
-from seisbai_contracts.core import Command
+from seisbai_contracts.core.artefacts.commands.pause import PauseCommand
 
 
-class PauseSeismicCubeDatasetGenerationCommand(Command, frozen=True, kw_only=True):
+class PauseSeismicCubeDatasetGenerationCommand(PauseCommand, frozen=True, kw_only=True):
     """
     Comando para pausar a geração de um dataset de cubo sísmico.
 

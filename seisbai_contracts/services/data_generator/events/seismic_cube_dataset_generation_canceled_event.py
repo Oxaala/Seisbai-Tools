@@ -1,8 +1,8 @@
 from uuid import UUID
-from seisbai_contracts.core import Event
+from seisbai_contracts.core.artefacts.events.canceled import CanceledEvent
 
 
-class SeismicCubeDatasetGenerationCanceledEvent(Event, frozen=True, kw_only=True):
+class SeismicCubeDatasetGenerationCanceledEvent(CanceledEvent, frozen=True, kw_only=True):
     """
     Evento emitido quando a geração de um dataset de cubo sísmico é cancelada.
 
