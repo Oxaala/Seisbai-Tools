@@ -3,6 +3,6 @@ from .event import Event
 from .failed import FailedEvent
 from .finished import FinishedEvent
 from .paused import PausedEvent
-from .progress_updated import ProgressUpdatedEvent
+from .progressed import ProgressedEvent
 from .resumed import ResumedEvent
 from .started import StartedEvent
