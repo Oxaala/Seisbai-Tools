@@ -1,8 +1,8 @@
 from uuid import UUID
-from seisbai_contracts.core import Event
+from seisbai_contracts.core.artefacts.events.resumed import ResumedEvent
 
 
-class FaultDetectionResumedEvent(Event, frozen=True, kw_only=True):
+class FaultDetectionResumedEvent(ResumedEvent, frozen=True, kw_only=True):
     """
     Evento emitido quando um job de detecção de falhas é retomado após ter sido pausado.
 

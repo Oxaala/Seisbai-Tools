@@ -1,7 +1,7 @@
 from uuid import UUID
-from seisbai_contracts.core import Command
+from seisbai_contracts.core.artefacts.commands.resume import ResumeCommand
 
-class ResumeFaultDetectionJobCommand(Command, frozen=True, kw_only=True):
+class ResumeFaultDetectionJobCommand(ResumeCommand, frozen=True, kw_only=True):
     """
     Comando responsável por retomar (resume) um job de detecção de falhas em um dataset.
 

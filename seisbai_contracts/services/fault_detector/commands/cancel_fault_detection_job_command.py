@@ -1,7 +1,7 @@
 from uuid import UUID
-from seisbai_contracts.core import Command
+from seisbai_contracts.core.artefacts.commands.cancel import CancelCommand
 
-class CancelFaultDetectionJobCommand(Command, frozen=True, kw_only=True):
+class CancelFaultDetectionJobCommand(CancelCommand, frozen=True, kw_only=True):
     """
     Comando utilizado para solicitar o cancelamento de um job de
     detecção de falhas em execução no sistema Seisbai.

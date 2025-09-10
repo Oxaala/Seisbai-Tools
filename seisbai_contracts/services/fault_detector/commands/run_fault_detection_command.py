@@ -1,10 +1,10 @@
 from uuid import UUID, uuid4
 from msgspec import field
-from seisbai_contracts.core import Command
+from seisbai_contracts.core.artefacts.commands.start import StartCommand
 from seisbai_contracts.services.fault_detector.DTOs import FaultDetectionParamsDTO
 
 
-class RunFaultDetectionCommand(Command, frozen=True, kw_only=True):
+class RunFaultDetectionCommand(StartCommand, frozen=True, kw_only=True):
     """
     Comando responsável por iniciar a execução de um job de detecção de falhas.
 

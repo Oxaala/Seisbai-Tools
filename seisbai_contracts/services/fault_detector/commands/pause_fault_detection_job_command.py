@@ -1,7 +1,7 @@
 from uuid import UUID
-from seisbai_contracts.core import Command
+from seisbai_contracts.core.artefacts.commands.pause import PauseCommand
 
-class PauseFaultDetectionJobCommand(Command, frozen=True, kw_only=True):
+class PauseFaultDetectionJobCommand(PauseCommand, frozen=True, kw_only=True):
     """
     Comando responsável por pausar um job de detecção de falhas em um dataset.
 

@@ -1,8 +1,8 @@
 from uuid import UUID
-from seisbai_contracts.core import Event
+from seisbai_contracts.core.artefacts.events.started import StartedEvent
 
 
-class FaultDetectionStartedEvent(Event, frozen=True, kw_only=True):
+class FaultDetectionStartedEvent(StartedEvent, frozen=True, kw_only=True):
     """
     Evento emitido quando um job de detecção de falhas é iniciado com sucesso.
 

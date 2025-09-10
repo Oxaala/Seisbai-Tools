@@ -1,8 +1,8 @@
 from uuid import UUID
-from seisbai_contracts.core import Event
+from seisbai_contracts.core.artefacts.events.canceled import CanceledEvent
 
 
-class FaultDetectionCanceledEvent(Event, frozen=True, kw_only=True):
+class FaultDetectionCanceledEvent(CanceledEvent, frozen=True, kw_only=True):
     """
     Evento emitido quando um job de detecção de falhas é cancelado antes da conclusão.
 

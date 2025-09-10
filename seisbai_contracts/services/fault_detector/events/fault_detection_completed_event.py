@@ -1,9 +1,9 @@
 from typing import List
 from uuid import UUID
-from seisbai_contracts.core import Event
+from seisbai_contracts.core.artefacts.events.finished import FinishedEvent
 
 
-class FaultDetectionCompletedEvent(Event, frozen=True, kw_only=True):
+class FaultDetectionCompletedEvent(FinishedEvent, frozen=True, kw_only=True):
     """
     Evento emitido quando um job de detecção de falhas é concluído com sucesso.
 

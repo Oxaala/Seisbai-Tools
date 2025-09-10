@@ -1,8 +1,8 @@
 from uuid import UUID
-from seisbai_contracts.core import Event
+from seisbai_contracts.core.artefacts.events.progressed import ProgressedEvent
 
 
-class FaultDetectionProgressEvent(Event, frozen=True, kw_only=True):
+class FaultDetectionProgressEvent(ProgressedEvent, frozen=True, kw_only=True):
     """
     Evento emitido periodicamente durante a execução de um job de
     detecção de falhas, indicando o progresso do processamento.
