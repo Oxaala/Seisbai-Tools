@@ -1,7 +1,7 @@
 from uuid import UUID
 from .event import Event
 
-class ProgressUpdatedEvent(Event, frozen=True, kw_only=True):
+class ProgressedEvent(Event, frozen=True, kw_only=True):
     """
     Evento que representa a atualização de progresso de uma tarefa em execução.
 
