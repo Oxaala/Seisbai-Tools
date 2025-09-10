@@ -1,5 +1,5 @@
 from typing import Any, Protocol, TypeVar
-from seisbai_contracts.core.artefacts.command import Command
+from seisbai_contracts.core.artefacts import Command
 
 # Tipo genérico para comandos, restrito a subclasses de Command.
 # O `contravariant=True` permite passar handlers mais genéricos

@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Protocol, TypeVar
 
-from seisbai_contracts.core.artefacts.command import Command
+from seisbai_contracts.core.artefacts import Command
 from seisbai_contracts.core.protocols.command_handler import CommandHandlerProtocol
 
 # Tipo genérico para comandos, restrito a subclasses de Command

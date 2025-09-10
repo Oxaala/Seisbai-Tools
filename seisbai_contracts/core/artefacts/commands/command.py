@@ -1,4 +1,4 @@
-from .base import Base
+from seisbai_contracts.core.artefacts.base import Base
 from seisbai_contracts.core.mixins import CommandAutoPublisherMixin
 
 
