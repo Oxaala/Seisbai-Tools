@@ -1,4 +1,4 @@
-from seisbai_contracts.core.artefacts import Command
+from .command import Command
 
 
 class CancelCommand(Command, frozen=True, kw_only=True):
