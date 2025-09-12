@@ -56,15 +56,14 @@ T = TypeVar("T")
 
 class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
     """
-    Representa um **payload** genérico enviado no sistema.
+    Payload genérico enviado no sistema, encapsulando dados de comandos ou eventos.
 
-    Um *payload* encapsula os dados de negócio ou controle associados a
-    comandos e eventos. Ele herda de :class:`Base`, garantindo que possua
-    também ``id`` e ``timestamp``. Além disso, incorpora o mixin
-    :class:`PayloadAutoPublisherMixin`, que pode publicar o payload
-    automaticamente em um *bus* configurado.
+    Um *payload* transporta de forma segura e explícita os dados de negócio ou controle
+    associados a comandos e eventos. Ele herda de :class:`Base` (possui ``id`` e ``timestamp``)
+    e incorpora o mixin :class:`PayloadAutoPublisherMixin`, permitindo publicação automática
+    no *bus* configurado.
 
-    Attributes
+    Atributos
     ----------
     token : str
         Token de autenticação fornecido no momento da criação.
@@ -73,37 +72,35 @@ class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
         Identificador único do usuário associado ao payload.
 
     data : T
-        Objeto de dados (DTO) encapsulado no payload. Deve ser serializável
-        em JSON pelo ``msgspec``. Pode ser qualquer dataclass ou estrutura
-        compatível.
+        Objeto de dados (DTO) encapsulado no payload. Deve ser serializável em JSON pelo
+        `msgspec`. Pode ser qualquer dataclass ou estrutura compatível.
 
     send : bool, default=True
-        Define se o payload deve ser efetivamente publicado no
-        :class:`PayloadBusProtocol`. Útil para cenários de teste ou
-        quando se deseja apenas instanciar o payload sem enviá-lo.
+        Define se o payload deve ser publicado automaticamente no bus.
+        Útil para cenários de teste ou para instanciar o payload sem enviá-lo.
 
-    Properties
-    ----------
-    _dto_path : str
-        Caminho de importação completo do tipo do DTO associado a ``data``.
-        Ex.: ``meu_modulo.submodulo.ClasseDTO``.
+    dto_path : str
+        Caminho de importação completo do tipo do DTO (`data`). Preenchido automaticamente
+        se não informado, no formato ``modulo.submodulo.ClasseDTO``.
 
+    Propriedades
+    ------------
     _encoded_data : bytes
-        Representação serializada de ``data`` em JSON. Se ``data`` já for
-        do tipo ``bytes``, retorna o valor original.
+        Representação serializada de ``data`` em JSON. Se ``data`` já for ``bytes``,
+        retorna o valor original.
 
-    Methods
+    Métodos
     -------
     serialize() -> bytes
-        Serializa o payload inteiro em JSON (incluindo metadados e o DTO).
+        Serializa o payload completo (metadados + DTO) em JSON.
 
     deserialize(dto_type: Optional[Type[T]] = None) -> T
-        Desserializa o conteúdo de ``data`` em uma instância do tipo DTO
-        especificado. Se ``dto_type`` não for informado, o tipo é
-        determinado automaticamente a partir de ``_dto_path``.
+        Desserializa o conteúdo de ``data`` em uma instância do tipo DTO especificado.
+        Se ``dto_type`` não for informado, o tipo é determinado automaticamente a partir
+        de ``dto_path``.
 
-    Examples
-    --------
+    Exemplo
+    -------
     >>> from uuid import uuid4
     >>> from dataclasses import dataclass
     >>> 
@@ -124,18 +121,16 @@ class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
     user_id: UUID = field()
     data: T = field()
     send: bool = field(default=True)
+    dto_path: str = field(default="")
 
-    @property
-    def _dto_path(self) -> str:
-        """
-        Caminho de importação completo do DTO associado a ``data``.
-
-        Returns
-        -------
-        str
-            Caminho no formato ``modulo.submodulo.ClasseDTO``.
-        """
-        return _get_import_path(type(self.data))
+    def __post_init__(self):
+        if not self.dto_path:
+            object.__setattr__(self, "dto_path", _get_import_path(type(self.data)))
+        
+        try:
+            super().__post_init__()
+        except AttributeError:
+            pass
 
     @property
     def _encoded_data(self) -> bytes:
@@ -185,6 +180,6 @@ class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
             conteúdo JSON não corresponder à estrutura esperada.
         """
         if dto_type is None:
-            dto_type = _import_type(self._dto_path)
+            dto_type = _import_type(self.dto_path)
 
         return msgspec.json.decode(self._encoded_data, type=dto_type)
