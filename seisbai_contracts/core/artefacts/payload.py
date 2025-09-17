@@ -1,8 +1,8 @@
+from datetime import datetime, timezone
 from typing import Optional, Type, TypeVar
-from uuid import UUID
+from uuid import UUID, uuid4
 from msgspec import field
 import msgspec
-from .base import Base
 import importlib
 from seisbai_contracts.core.mixins import PayloadAutoPublisherMixin
 
@@ -54,7 +54,7 @@ T = TypeVar("T")
 """Tipo genérico usado para parametrizar DTOs."""
 
 
-class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
+class Payload(PayloadAutoPublisherMixin):
     """
     Payload genérico enviado no sistema, encapsulando dados de comandos ou eventos.
 
@@ -117,6 +117,9 @@ class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
     >>> assert decoded.value == 42
     """
 
+    id: UUID = field(default_factory=lambda: uuid4())
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    message: str = field(default="")
     token: str = field()
     user_id: UUID = field()
     data: T = field()
@@ -124,8 +127,7 @@ class Payload(Base, PayloadAutoPublisherMixin, frozen=True, kw_only=True):
     dto_path: str = field(default="")
 
     def __post_init__(self):
-        if not self.dto_path:
-            object.__setattr__(self, "dto_path", _get_import_path(type(self.data)))
+        self.dto_path = _get_import_path(type(self.data))
         
         try:
             super().__post_init__()
