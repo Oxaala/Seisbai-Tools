@@ -1,44 +1,43 @@
 from datetime import datetime, timezone
-from typing import Optional
 from uuid import UUID, uuid4
 from msgspec import Struct, field
 
 class Base(Struct, frozen=True, kw_only=True):
     """
-    Uma classe base imutável para definir propriedades comuns a comandos e eventos.
+    Classe base imutável para comandos e eventos no sistema.
 
-    Esta classe atua como um contrato para entidades do sistema 
-    (como comandos ou eventos), garantindo que todas possuam:
+    Define um contrato mínimo para entidades que trafegam no barramento,
+    garantindo que todas possuam:
     - um identificador único,
-    - um carimbo de tempo (timestamp),
+    - um carimbo de tempo em UTC,
     - uma mensagem descritiva,
-    - e opcionalmente um identificador de conexão associado.
+    - e um identificador de conexão WebSocket associado.
 
     A biblioteca `msgspec` é utilizada em vez de `dataclasses` ou `pydantic`
-    por ser extremamente rápida e otimizada para serialização e validação
-    de dados (similar ao que `protobuf` ou `avro` fariam, mas em Python puro).
+    por ser altamente otimizada para validação e serialização de dados,
+    oferecendo desempenho comparável a formatos binários como `protobuf` ou `avro`.
 
     Attributes
     ----------
     id : uuid.UUID
         Identificador único universal (UUID) da instância.  
         Gerado automaticamente com ``uuid4()`` se não informado.  
-        Permite rastrear comandos/eventos de forma unívoca em sistemas distribuídos.
+        Útil para rastrear comandos/eventos de forma unívoca em sistemas distribuídos.
 
     timestamp : datetime.datetime
-        Data e hora exata da criação do objeto, sempre em UTC.  
-        Essencial para ordenação temporal, auditoria, debugging e mensageria.
+        Data e hora da criação do objeto, sempre em UTC.  
+        Essencial para ordenação temporal, auditoria, depuração e mensageria.
 
     message : str
-        Mensagem ou descrição associada ao comando/evento.  
-        Útil para logs, depuração, rastreamento ou como metadado adicional.
+        Texto descritivo ou informativo associado ao comando/evento.  
+        Pode ser usado para logs, debugging ou metadados adicionais.
 
-    connection_id : Optional[uuid.UUID]
-        Identificador único da conexão associada ao comando/evento.  
-        Pode ser ``None`` caso não haja vínculo direto com uma conexão.  
-        Essencial para rastrear interações em sistemas distribuídos e sessões de comunicação.
+    ws_connection_id : uuid.UUID
+        Identificador da conexão WebSocket associada ao comando/evento.  
+        Obrigatório, utilizado para rastrear interações em sistemas distribuídos
+        orientados a conexões.
     """
     id: UUID = field(default_factory=lambda: uuid4())
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     message: str = field(default="")
-    connection_id: Optional[UUID] = field(default=None)
+    ws_connection_id: UUID = field()

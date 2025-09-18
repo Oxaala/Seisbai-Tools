@@ -1,3 +1,3 @@
 from .commands import Command
-from .payload import Payload
+from .package import Package
 from .events import Event
