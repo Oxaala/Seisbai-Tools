@@ -15,6 +15,12 @@ class FailedEvent(Event, frozen=True, kw_only=True):
     task_id : uuid.UUID
         Identificador único da tarefa que falhou.  
         Usado para correlacionar este evento com a execução da tarefa.
-    """
 
+    error_message : str
+        Descrição detalhada do erro que causou a falha.  
+        Pode incluir mensagens de exceções ou informações adicionais
+        para facilitar a análise do problema.
+    """
+    
     task_id: UUID
+    error_message: str
