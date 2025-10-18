@@ -31,13 +31,7 @@ class Base(Struct, frozen=True, kw_only=True):
     message : str
         Texto descritivo ou informativo associado ao comando/evento.  
         Pode ser usado para logs, debugging ou metadados adicionais.
-
-    ws_connection_id : uuid.UUID
-        Identificador da conexão WebSocket associada ao comando/evento.  
-        Obrigatório, utilizado para rastrear interações em sistemas distribuídos
-        orientados a conexões.
     """
     id: UUID = field(default_factory=lambda: uuid4())
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     message: str = field(default="")
-    ws_connection_id: UUID = field()
