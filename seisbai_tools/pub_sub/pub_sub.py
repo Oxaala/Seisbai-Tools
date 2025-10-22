@@ -77,10 +77,24 @@ class PubSub():
     def unsubscribe(self, topic: str, callback: Callback):
         with self._lock:
             if topic in self._subscribers:
-                self._subscribers[topic] = [(cb, ti) for cb, ti in self._subscribers[topic] if cb != callback]
+                self._subscribers[topic] = [
+                    (cb, thread_id) for cb, thread_id in self._subscribers[topic] if cb != callback
+                ]
 
                 if not self._subscribers[topic]:
                     del self._subscribers[topic]
+
+                remaining_callbacks: List[Tuple[Callback, int]] = []
+
+                for subscribers in self._subscribers.values():
+                    for cb, thread_id in subscribers:
+                        if thread_id != current_thread().ident:
+                            remaining_callbacks.append((cb, thread_id))
+
+                current_thread_id = current_thread().ident
+
+                if not remaining_callbacks and current_thread_id:
+                    _global_thread_dispatcher.stop_thread(current_thread_id)
 
     def publish(self, topic: str, *args: Any, **kwargs: Any):
         self._event_queue.put((topic, args, kwargs))
