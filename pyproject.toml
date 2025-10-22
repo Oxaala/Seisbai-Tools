@@ -1,6 +1,7 @@
 [build-system]
 requires = [
     "setuptools", 
-    "msgspec"
+    "msgspec",
+    "ulid-py"
 ]
 build-backend = "setuptools.build_meta"
