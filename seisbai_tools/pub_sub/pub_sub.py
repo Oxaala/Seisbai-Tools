@@ -17,13 +17,16 @@ class ThreadDispatcher():
         self._executor.submit(self._run_callbacks)
 
     def _run_callbacks(self):
-        with self._lock:
-            while not self._queue.empty():   
-                try:
+        while not self._queue.empty():   
+            try:
+                with self._lock:
                     callback, args, kwargs = self._queue.get_nowait()
-                    callback(*args, **kwargs)
-                except Empty:
-                    break
+                
+                callback(*args, **kwargs)
+            except Empty:
+                break
+            except Exception as error:
+                print(f"\n\nError when running {callback.__name__}: {error}\n\n")
 
     def stop(self):
         self._executor.shutdown()
@@ -84,7 +87,7 @@ class PubSub():
     def _process_events(self):
         while not self._stop_event.is_set():
             try:
-                topic, args, kwargs = self._event_queue.get(timeout=0.5)
+                topic, args, kwargs = self._event_queue.get_nowait()
             except Empty:
                 continue
             
