@@ -1,63 +1,51 @@
+from concurrent.futures import ThreadPoolExecutor
 from queue import Empty, Queue
-from threading import Event, Lock, Thread, current_thread
-from typing import Any, Dict, List, Self, Tuple
+from threading import Event, Lock, Thread
+from typing import Any, Dict, List, Self, Tuple, Union
+from weakref import WeakMethod
 
-from seisbai_tools.types import Callback
+from seisbai_tools.types import Args, Callback, Kwargs
 
 class ThreadDispatcher():
     def __init__(self) -> None:
-        self._queues: Dict[int, Queue[Tuple[Callback, Any, Any]]] = {}
-        self._locks: Dict[int, Lock] = {}
-        self._events: Dict[int, Event] = {}
+        self._queue: Queue[Tuple[Callback, Args, Kwargs]] = Queue()
+        self._executor = ThreadPoolExecutor(4)
+        self._lock = Lock()
 
-    def register_thread(self, thread_id: int):
-        if thread_id not in self._queues:
-            self._queues[thread_id] = Queue()
-            self._locks[thread_id] = Lock()
-            self._events[thread_id] = Event()
-            self._events[thread_id].set()
+    def dispatch(self, callback: Callback, *args: Args, **kwargs: Kwargs):
+        self._queue.put((callback, args, kwargs))
+        self._executor.submit(self._run_callbacks)
 
-            loop_thread = Thread(
-                target=self._loop, args=(thread_id,), name=f"Listener Thread - {thread_id}", daemon=True
-            )
-            loop_thread.start()
+    def _run_callbacks(self):
+        with self._lock:
+            while not self._queue.empty():   
+                try:
+                    callback, args, kwargs = self._queue.get_nowait()
+                    callback(*args, **kwargs)
+                except Empty:
+                    break
 
-    def dispatch(self, thread_id: int, callback: Callback, *args: Any, **kwargs: Any):
-        self.register_thread(thread_id)
-        self._queues[thread_id].put((callback, args, kwargs))
-
-    def _loop(self, thread_id: int):
-        queue = self._queues[thread_id]
-        event = self._events[thread_id]
-
-        while event.is_set():
-            try:
-                callback, args, kwargs = queue.get(timeout=0.5)
-                callback(*args, **kwargs)
-            except Empty:
-                continue
-
-    def stop_thread(self, thread_id: int):
-        if thread_id in self._events:
-            self._events[thread_id].clear()
-
+    def stop(self):
+        self._executor.shutdown()
 
 _global_thread_dispatcher = ThreadDispatcher()
 
 class PubSub():
     _instance = None
     _instance_lock = Lock()
-    _subscribers: Dict[str, List[Tuple[Callback, int]]]
+    _subscribers: Dict[str, List[Union[Callback, WeakMethod[Any]]]]
     _lock: Lock
-    _event_queue: Queue[Tuple[str, Any, Any]]
+    _event_queue: Queue[Tuple[str, Args, Kwargs]]
+    _stop_event: Event
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
+    def __new__(cls, *args: Args, **kwargs: Kwargs) -> Self:
         with cls._instance_lock:
             if not cls._instance:
                 cls._instance = super().__new__(cls)
                 cls._instance._subscribers = {}
                 cls._instance._lock = Lock()
                 cls._event_queue = Queue()
+                cls._stop_event = Event()
                 cls._dispatcher_thread = Thread(
                     target=cls._instance._process_events, name="GlobalEventDispatcher", daemon=True
                 )
@@ -66,48 +54,59 @@ class PubSub():
         return cls._instance
 
     def subscribe(self, topic: str, callback: Callback):
-        thread_id = current_thread().ident
+        if hasattr(callback, "__self__") and getattr(callback, "__self__") is not None:
+            callback_reference = WeakMethod(callback)
+        else:
+            callback_reference = callback
 
-        if thread_id:
-            with self._lock:
-                self._subscribers.setdefault(topic, []).append((callback, thread_id))
-        
-            _global_thread_dispatcher.register_thread(thread_id)
+        with self._lock:
+            self._subscribers.setdefault(topic, []).append(callback_reference)
 
     def unsubscribe(self, topic: str, callback: Callback):
         with self._lock:
             if topic in self._subscribers:
                 self._subscribers[topic] = [
-                    (cb, thread_id) for cb, thread_id in self._subscribers[topic] if cb != callback
+                    callback_reference for callback_reference in self._subscribers[topic]
+                    if not self._compare_callback(callback_reference, callback)
                 ]
 
-                if not self._subscribers[topic]:
-                    del self._subscribers[topic]
+            if topic in self._subscribers and not self._subscribers[topic]:
+                del self._subscribers[topic]
 
-                remaining_callbacks: List[Tuple[Callback, int]] = []
-
-                for subscribers in self._subscribers.values():
-                    for cb, thread_id in subscribers:
-                        if thread_id != current_thread().ident:
-                            remaining_callbacks.append((cb, thread_id))
-
-                current_thread_id = current_thread().ident
-
-                if not remaining_callbacks and current_thread_id:
-                    _global_thread_dispatcher.stop_thread(current_thread_id)
-
-    def publish(self, topic: str, *args: Any, **kwargs: Any):
+    def publish(self, topic: str, *args: Args, **kwargs: Kwargs):
         self._event_queue.put((topic, args, kwargs))
+
+    def stop(self):
+        self._stop_event.set()
+        self._dispatcher_thread.join(timeout=1)
+        _global_thread_dispatcher.stop()
         
     def _process_events(self):
-        while True:
+        while not self._stop_event.is_set():
             try:
                 topic, args, kwargs = self._event_queue.get(timeout=0.5)
             except Empty:
                 continue
             
             with self._lock:
-                subscribers = self._subscribers.get(topic, [])
+                subscribers = list(self._subscribers.get(topic, []))
 
-            for callback, thread_id in subscribers:
-                _global_thread_dispatcher.dispatch(thread_id, callback, *args, **kwargs)
+            for callback_reference in subscribers:
+                callback = self._resolve_callback(callback_reference)
+                
+                if callback:
+                    _global_thread_dispatcher.dispatch(callback, *args, **kwargs)
+
+    @staticmethod
+    def _resolve_callback(cb_ref: Union[Callback, WeakMethod[Any]]) -> Union[Callback, None]:
+        if isinstance(cb_ref, WeakMethod):
+            return cb_ref()
+        
+        return cb_ref
+
+    @staticmethod
+    def _compare_callback(cb_ref: Union[Callback, WeakMethod[Any]], callback: Callback) -> bool:
+        """Compara callback forte ou weakref"""
+        resolved = PubSub._resolve_callback(cb_ref)
+        
+        return resolved is callback
