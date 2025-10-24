@@ -1,8 +1,10 @@
 from ulid import ULID, new as newULID
 from msgspec import Struct, field
 
+from seisbai_tools.pub_sub.mixins.auto_publish import AutoPublishMixin
 
-class Base(Struct, frozen=True, kw_only=True):
+
+class Base(Struct, AutoPublishMixin, frozen=True, kw_only=True):
     """
     Classe base imutável para comandos e eventos no sistema.
 
