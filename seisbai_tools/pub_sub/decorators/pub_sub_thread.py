@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Type, TypeVar
+from typing import Any, Optional, Type, TypeVar
 from seisbai_tools.pub_sub.pub_sub import PubSub
 from seisbai_tools.types import Args, Callback, Kwargs
 from seisbai_tools.utils.thread_with_loop import ThreadWithLoop
@@ -11,23 +11,11 @@ def PubSubThread(cls: Type[T]) -> Type[T | ThreadWithLoop]:
     Aceita todos os parâmetros padrão do construtor de `threading.Thread`.
     """
     class ThreadedWrapper(ThreadWithLoop):
-        def __init__(
-            self,
-            group: Optional[Any] = None,
-            name: Optional[str] = None,
-            args: Tuple[Any, ...] = (),
-            kwargs: Optional[Dict[str, Any]] = None,
-            *,
-            daemon: Optional[bool] = None,
-            **extra_kwargs: Any,
-        ):
-            if kwargs is None:
-                kwargs = {}
-
-            super().__init__(group=group, name=name, daemon=daemon)
+        def __init__(self, *args: Args, **kwargs: Kwargs):
+            super().__init__(name=kwargs.get("name", None), daemon=kwargs.get("daemon", None))
 
             self._init_args = args
-            self._init_kwargs = {**kwargs, **extra_kwargs}
+            self._init_kwargs = kwargs
             self._instance: Optional[T] = None
 
             self.invoke(self._init_instance)
