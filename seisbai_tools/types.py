@@ -1,6 +1,6 @@
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Callable, Dict
 
 
 Callback = Callable[..., None]
-Args = Tuple[Any, ...]
+Args = Any
 Kwargs = Dict[str, Any]
