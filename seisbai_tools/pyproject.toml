@@ -1,0 +1,11 @@
+[project]
+name = "seisbai_tools"
+version = "1.0.0"
+
+[build-system]
+requires = [
+    "setuptools", 
+    "msgspec",
+    "ulid-py"
+]
+build-backend = "setuptools.build_meta"
