@@ -1,56 +1,65 @@
-from concurrent.futures import ThreadPoolExecutor
-from queue import Empty, Queue
+from queue import Queue
 from threading import Event, Lock, Thread
-from typing import Any, Dict, List, Self, Tuple, Union
+from typing import Any, Dict, List, Self, Tuple, Union, cast
 from weakref import WeakMethod
 
 from seisbai_tools.types import Args, Callback, Kwargs
 
-class ThreadDispatcher():
-    def __init__(self) -> None:
-        self._queue: Queue[Tuple[Callback, Args, Kwargs]] = Queue()
-        self._executor = ThreadPoolExecutor(4)
-        self._lock = Lock()
+class CallbackDispatcher():
+    def __init__(self, max_workers: int = 4) -> None:
+        self._queue: Queue[Tuple[Callback, Args, Kwargs] | object] = Queue()
+        self._worker = Thread(target = self._worker_loop, daemon = True)
+        self._workers: List[Thread] = []
+        self._sentinel = object()
+
+        for i in range(max_workers):
+            worker = Thread(target=self._worker_loop, name=f"CallbackDispatcher-{i}", daemon=True)
+            worker.start()
+            self._workers.append(worker)
 
     def dispatch(self, callback: Callback, *args: Args, **kwargs: Kwargs):
         self._queue.put((callback, args, kwargs))
-        self._executor.submit(self._run_callbacks)
 
-    def _run_callbacks(self):
-        while not self._queue.empty():   
+    def _worker_loop(self):
+        while True:
             try:
-                with self._lock:
-                    callback, args, kwargs = self._queue.get_nowait()
-                
+                item = self._queue.get()
+
+                if item is self._sentinel:
+                    self._queue.put(self._sentinel)
+                    break
+
+                callback, args, kwargs = cast(Tuple[Callback, Args, Kwargs], item)
+
                 callback(*args, **kwargs)
-            except Empty:
-                break
             except Exception as error:
-                print(f"\n\nError when running {callback.__name__}: {error}\n\n")
+                print(f"[CallbackDispatcher] Error running {callback}: {error}")
 
     def stop(self):
-        self._executor.shutdown()
+        self._queue.put(self._sentinel)
 
-_global_thread_dispatcher = ThreadDispatcher()
+        for worker in self._workers:
+            worker.join(timeout=1)
+
+_global_callback_dispatcher = CallbackDispatcher()
 
 class PubSub():
     _instance = None
     _instance_lock = Lock()
     _subscribers: Dict[str, List[Union[Callback, WeakMethod[Any]]]]
     _lock: Lock
-    _event_queue: Queue[Tuple[str, Args, Kwargs]]
-    _stop_event: Event
-
+    _queue: Queue[Tuple[str, Args, Kwargs] | object]
+    
     def __new__(cls, *args: Args, **kwargs: Kwargs) -> Self:
         with cls._instance_lock:
             if not cls._instance:
                 cls._instance = super().__new__(cls)
                 cls._instance._subscribers = {}
                 cls._instance._lock = Lock()
-                cls._event_queue = Queue()
-                cls._stop_event = Event()
+                cls._queue = Queue()
+                cls._sentinel = object()
                 cls._dispatcher_thread = Thread(
-                    target=cls._instance._process_events, name="GlobalEventDispatcher", daemon=True
+                    target=cls._instance._process_events, name="PubSubProcessor", daemon=True
                 )
                 cls._instance._dispatcher_thread.start()
 
@@ -77,28 +86,31 @@ class PubSub():
                 del self._subscribers[topic]
 
     def publish(self, topic: str, *args: Args, **kwargs: Kwargs):
-        self._event_queue.put((topic, args, kwargs))
+        self._queue.put((topic, args, kwargs))
 
     def stop(self):
-        self._stop_event.set()
+        self._queue.put(None)
         self._dispatcher_thread.join(timeout=1)
-        _global_thread_dispatcher.stop()
+        _global_callback_dispatcher.stop()
         
     def _process_events(self):
-        while not self._stop_event.is_set():
-            try:
-                topic, args, kwargs = self._event_queue.get_nowait()
-            except Empty:
-                continue
+        while True:
+            item = self._queue.get()
+
+            if item is self._sentinel:
+                self._queue.put(self._sentinel)
+                break
+
+            topic, args, kwargs = cast(Tuple[str, Args, Kwargs], item)
             
             with self._lock:
-                subscribers = list(self._subscribers.get(topic, []))
+                subscribers = self._subscribers.get(topic, []).copy()
 
             for callback_reference in subscribers:
                 callback = self._resolve_callback(callback_reference)
                 
                 if callback:
-                    _global_thread_dispatcher.dispatch(callback, *args, **kwargs)
+                    _global_callback_dispatcher.dispatch(callback, *args, **kwargs)
 
     @staticmethod
     def _resolve_callback(cb_ref: Union[Callback, WeakMethod[Any]]) -> Union[Callback, None]:
