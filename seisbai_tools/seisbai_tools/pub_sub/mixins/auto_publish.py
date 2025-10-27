@@ -1,5 +1,5 @@
 from msgspec import Struct
-from seisbai_tools.pub_sub.pub_sub import PubSub
+from ..pub_sub import PubSub
 
 
 class AutoPublishMixin:

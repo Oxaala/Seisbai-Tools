@@ -1,7 +1,7 @@
 from typing import List, Type
-from seisbai_tools.eda.commands.command import Command
-from seisbai_tools.pub_sub.utils.subscription_logic import apply_subscription_logic
-from seisbai_tools.types import Callback
+from ...eda.commands import Command
+from ..utils.subscription_logic import apply_subscription_logic
+from ...types import Callback
 
 _handlers: List[str] = []
 

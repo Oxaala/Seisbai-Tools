@@ -1,7 +1,7 @@
 from ulid import ULID, new as newULID
 from msgspec import Struct, field
 
-from seisbai_tools.pub_sub.mixins.auto_publish import AutoPublishMixin
+from ..pub_sub.mixins import AutoPublishMixin
 
 
 class Base(Struct, AutoPublishMixin, frozen=True, kw_only=True):

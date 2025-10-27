@@ -3,7 +3,7 @@ from threading import Lock, Thread
 from typing import Any, Callable, Dict, List, Optional, Self, Tuple, Union, cast
 from weakref import WeakMethod
 
-from seisbai_tools.types import Args, Callback, Kwargs
+from ..types import Args, Callback, Kwargs
 
 class CallbackDispatcher():
     def __init__(self, max_workers: int = 4) -> None:

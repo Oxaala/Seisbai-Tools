@@ -1,6 +1,6 @@
 from typing import Type, TypeVar
-from seisbai_tools.pub_sub import PubSub
-from seisbai_tools.types import Args, Callback, Kwargs
+from ..pub_sub import PubSub
+from ...types import Args, Callback, Kwargs
 
 T = TypeVar("T")
 

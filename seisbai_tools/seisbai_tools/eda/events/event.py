@@ -1,5 +1,5 @@
 from msgspec import field
-from seisbai_tools.eda.base import Base
+from ..base import Base
 from ulid import ULID
 
 class Event(Base, frozen=True, kw_only=True):

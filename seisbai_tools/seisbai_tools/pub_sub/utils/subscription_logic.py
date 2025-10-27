@@ -1,7 +1,7 @@
 from functools import wraps
 from inspect import signature
-from seisbai_tools.pub_sub.pub_sub import PubSub
-from seisbai_tools.types import Args, Callback, Kwargs
+from ..pub_sub import PubSub
+from ...types import Args, Callback, Kwargs
 
 
 def apply_subscription_logic(topic: str, function: Callback):

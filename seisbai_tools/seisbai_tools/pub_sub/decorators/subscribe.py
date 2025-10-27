@@ -1,5 +1,5 @@
-from seisbai_tools.pub_sub.utils.subscription_logic import apply_subscription_logic
-from seisbai_tools.types import Callback
+from ..utils.subscription_logic import apply_subscription_logic
+from ...types import Callback
 
 
 def Subscribe(topic: str):

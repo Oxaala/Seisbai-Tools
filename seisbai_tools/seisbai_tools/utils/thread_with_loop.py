@@ -2,7 +2,7 @@ from queue import Empty, Queue
 from threading import Event, Thread, current_thread
 from typing import Any, Tuple, Dict
 
-from seisbai_tools.types import Callback
+from ..types import Callback
 
 
 class ThreadWithLoop(Thread):
