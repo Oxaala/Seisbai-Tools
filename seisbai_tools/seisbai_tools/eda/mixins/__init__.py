@@ -1,1 +1,1 @@
-from .auto_loger import AutoLoggerMixin
+from .auto_logger import AutoLoggerMixin
