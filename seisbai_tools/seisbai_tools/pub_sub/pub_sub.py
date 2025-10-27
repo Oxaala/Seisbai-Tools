@@ -1,6 +1,7 @@
 from queue import Queue
 from threading import Lock, Thread
 from typing import Any, Callable, Dict, List, Optional, Self, Tuple, Union, cast
+from uuid import UUID, uuid4
 from weakref import WeakMethod
 
 from ..types import Args, Callback, Kwargs
@@ -65,6 +66,7 @@ class PubSub():
                 cls._instance._lock = Lock()
                 cls._queue = Queue()
                 cls._sentinel = object()
+                cls.__session = uuid4()
                 cls._dispatcher_thread = Thread(
                     target=cls._instance._process_events, name="PubSubProcessor", daemon=True
                 )
@@ -99,6 +101,9 @@ class PubSub():
         self._queue.put(None)
         self._dispatcher_thread.join(timeout=1)
         _global_callback_dispatcher.stop()
+
+    def session(self) -> UUID:
+        return self.__session
         
     def _process_events(self):
         while True:

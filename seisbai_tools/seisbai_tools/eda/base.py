@@ -2,9 +2,10 @@ from ulid import ULID, new as newULID
 from msgspec import Struct, field
 
 from ..pub_sub.mixins import AutoPublishMixin
+from ..eda.mixins import AutoLoggerMixin
 
 
-class Base(Struct, AutoPublishMixin, frozen=True, kw_only=True):
+class Base(Struct, AutoPublishMixin, AutoLoggerMixin, frozen=True, kw_only=True):
     """
     Classe base imutável para comandos e eventos no sistema.
 
@@ -35,6 +36,10 @@ class Base(Struct, AutoPublishMixin, frozen=True, kw_only=True):
     """
     _id: ULID = field(default_factory=lambda: newULID())
     message: str = field(default="")
+
+    def __post_init__(self):
+        AutoPublishMixin.__post_init__(self)
+        AutoLoggerMixin.__post_init__(self)
 
     @property
     def id(self):
