@@ -41,12 +41,6 @@ def _write_log(file_path: str, entry: Dict[str, Any]):
 
 class AutoLoggerMixin:
     def __post_init__(self):
-        print("Logar")
-        super_post_init = getattr(super, "__post_init__", None)
-
-        if callable(super_post_init):
-            super_post_init()
-        
         log_dir = getattr(self, "log_dir", get_default_log_dir())
         hostname = socket.gethostname()
         session = PubSub().session()
