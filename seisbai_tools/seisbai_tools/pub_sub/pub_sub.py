@@ -11,7 +11,7 @@ class CallbackDispatcher():
         self._worker = Thread(target = self._worker_loop, daemon = True)
         self._workers: List[Thread] = []
         self._sentinel = object()
-        self._exception_handler: Optional[Callable[[Exception], None]]
+        self._exception_handler: Optional[Callable[[Exception], None]] = None
 
         for i in range(max_workers):
             worker = Thread(target=self._worker_loop, name=f"CallbackDispatcher-{i}", daemon=True)
