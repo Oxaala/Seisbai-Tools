@@ -1,6 +1,6 @@
 from queue import Queue
-from threading import Event, Lock, Thread
-from typing import Any, Dict, List, Self, Tuple, Union, cast
+from threading import Lock, Thread
+from typing import Any, Callable, Dict, List, Optional, Self, Tuple, Union, cast
 from weakref import WeakMethod
 
 from seisbai_tools.types import Args, Callback, Kwargs
@@ -11,6 +11,7 @@ class CallbackDispatcher():
         self._worker = Thread(target = self._worker_loop, daemon = True)
         self._workers: List[Thread] = []
         self._sentinel = object()
+        self._exception_handler: Optional[Callable[[Exception], None]]
 
         for i in range(max_workers):
             worker = Thread(target=self._worker_loop, name=f"CallbackDispatcher-{i}", daemon=True)
@@ -33,13 +34,19 @@ class CallbackDispatcher():
 
                 callback(*args, **kwargs)
             except Exception as error:
-                print(f"[CallbackDispatcher] Error running {callback}: {error}")
+                if self._exception_handler:
+                    self._exception_handler(error)
+                else:
+                    print(f"[CallbackDispatcher] Error running {callback}: {error}")
 
     def stop(self):
         self._queue.put(self._sentinel)
 
         for worker in self._workers:
             worker.join(timeout=1)
+
+    def set_exception_handler(self, handler: Callable[[Exception], Any]):
+        self._exception_handler = handler
 
 _global_callback_dispatcher = CallbackDispatcher()
 
