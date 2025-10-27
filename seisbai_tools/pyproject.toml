@@ -1,6 +1,10 @@
 [project]
 name = "seisbai_tools"
 version = "1.0.0"
+dependencies = [
+    "msgspec",
+    "ulid-py"
+]
 
 [build-system]
 requires = [
