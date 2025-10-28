@@ -16,11 +16,11 @@ class ProgressUpdatedEvent(Event, frozen=True, kw_only=True):
         Identificador único da operação cujo progresso foi atualizado.
         Usado para correlacionar este evento com a execução da operação.
 
-    progress : int
+    progress : float
         Valor numérico que indica o progresso atual da operação.
         Pode ser interpretado como percentual (0–100), número de etapas
         concluídas ou outra métrica definida pelo sistema.
     """
 
     work_id: UUID
-    progress: int
+    progress: float
