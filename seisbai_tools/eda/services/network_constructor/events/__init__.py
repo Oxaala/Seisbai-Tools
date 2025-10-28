@@ -1,7 +1,7 @@
-from .network_constructor_paused_event import NetworkConstructorPausedEvent
-from .network_constructor_started_event import NetworkConstructorStartedEvent
-from .network_constructor_canceled_event import NetworkConstructorCanceledEvent
-from .network_constructor_resumed_event import NetworkConstructorResumedEvent
-from .network_constructor_failed_event import NetworkConstructorFailedEvent
-from .network_constructor_finished_event import NetworkConstructorFinishedEvent
-from .network_constructor_progressed_event import NetworkConstructorProgressedEvent
+from .network_constructor_paused_event import NetworkConstructorPausedEvent #type: ignore
+from .network_constructor_started_event import NetworkConstructorStartedEvent #type: ignore
+from .network_constructor_canceled_event import NetworkConstructorCanceledEvent #type: ignore
+from .network_constructor_resumed_event import NetworkConstructorResumedEvent #type: ignore
+from .network_constructor_failed_event import NetworkConstructorFailedEvent #type: ignore
+from .network_constructor_finished_event import NetworkConstructorCompletedEvent #type: ignore
+from .network_constructor_progressed_event import NetworkConstructorProgressUpdatedEvent #type: ignore

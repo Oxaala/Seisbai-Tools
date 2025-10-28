@@ -2,6 +2,6 @@ from .fault_detection_canceled_event import FaultDetectionCanceledEvent #type:ig
 from .fault_detection_completed_event import FaultDetectionCompletedEvent #type:ignore
 from .fault_detection_failed_event import FaultDetectionFailedEvent #type:ignore
 from .fault_detection_paused_event import FaultDetectionPausedEvent #type:ignore
-from .fault_detection_progress_event import FaultDetectionProgressEvent #type:ignore
+from .fault_detection_progress_event import FaultDetectionProgressUpdatedEvent #type:ignore
 from .fault_detection_resumed_event import FaultDetectionResumedEvent #type:ignore
 from .fault_detection_started_event import FaultDetectionStartedEvent #type:ignore
