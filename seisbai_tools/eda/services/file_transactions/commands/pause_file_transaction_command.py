@@ -1,9 +1,9 @@
 import uuid
 
-from ....commands import Command
+from ....commands import PauseCommand
 
 
-class PauseFileTransactionJobCommand(Command, frozen=True, kw_only=True):
+class PauseFileTransactionJobCommand(PauseCommand, frozen=True, kw_only=True):
     """
     Comando que solicita a pausa de uma transação de arquivos.
 

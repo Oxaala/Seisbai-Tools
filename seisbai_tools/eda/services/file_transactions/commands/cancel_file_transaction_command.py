@@ -1,9 +1,9 @@
 import uuid
 
-from ....commands import Command
+from ....commands import CancelCommand
 
 
-class CancelFileTransactionJobCommand(Command, frozen=True, kw_only=True):
+class CancelFileTransactionJobCommand(CancelCommand, frozen=True, kw_only=True):
     """
     Comando que solicita o cancelamento de uma transação de arquivos.
 

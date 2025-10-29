@@ -1,9 +1,9 @@
 import uuid
 
-from ....commands import Command
+from ....commands import ResumeCommand
 
 
-class ResumeFileTransactionJobCommand(Command, frozen=True, kw_only=True):
+class ResumeFileTransactionJobCommand(ResumeCommand, frozen=True, kw_only=True):
     """
     Comando que solicita a retomada de uma transação de arquivos.
 
