@@ -1,73 +1,35 @@
 from queue import Queue
 from threading import Lock, Thread
-from typing import Any, Callable, Dict, List, Optional, Self, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Self, Tuple, Union, cast
 from uuid import UUID, uuid4
 from weakref import WeakMethod
+from concurrent.futures import ThreadPoolExecutor
 
 from ..types import Args, Callback, Kwargs
 
-class CallbackDispatcher():
-    def __init__(self, max_workers: int = 4) -> None:
-        self._queue: Queue[Tuple[Callback, Args, Kwargs] | object] = Queue()
-        self._worker = Thread(target = self._worker_loop, daemon = True)
-        self._workers: List[Thread] = []
-        self._sentinel = object()
-        self._exception_handler: Optional[Callable[[Exception], None]] = None
 
-        for i in range(max_workers):
-            worker = Thread(target=self._worker_loop, name=f"CallbackDispatcher-{i}", daemon=True)
-            worker.start()
-            self._workers.append(worker)
-
-    def dispatch(self, callback: Callback, *args: Args, **kwargs: Kwargs):
-        self._queue.put((callback, args, kwargs))
-
-    def _worker_loop(self):
-        while True:
-            try:
-                item = self._queue.get()
-
-                if item is self._sentinel:
-                    self._queue.put(self._sentinel)
-                    break
-
-                callback, args, kwargs = cast(Tuple[Callback, Args, Kwargs], item)
-
-                callback(*args, **kwargs)
-            except Exception as error:
-                if self._exception_handler:
-                    self._exception_handler(error)
-                else:
-                    print(f"[CallbackDispatcher] Error running {callback}: {error}")
-
-    def stop(self):
-        self._queue.put(self._sentinel)
-
-        for worker in self._workers:
-            worker.join(timeout=1)
-
-    def set_exception_handler(self, handler: Callable[[Exception], Any]):
-        self._exception_handler = handler
-
-_global_callback_dispatcher = CallbackDispatcher()
-
-class PubSub():
+class PubSub:
     _instance = None
     _instance_lock = Lock()
     _subscribers: Dict[str, List[Union[Callback, WeakMethod[Any]]]]
     _lock: Lock
     _queue: Queue[Tuple[str, Args, Kwargs] | object]
-    
+    _executor: ThreadPoolExecutor
+    _dispatcher_thread: Thread
+    _sentinel: object
+    _session: UUID
+
     def __new__(cls, *args: Args, **kwargs: Kwargs) -> Self:
         with cls._instance_lock:
             if not cls._instance:
                 cls._instance = super().__new__(cls)
                 cls._instance._subscribers = {}
                 cls._instance._lock = Lock()
-                cls._queue = Queue()
-                cls._sentinel = object()
-                cls.__session = uuid4()
-                cls._dispatcher_thread = Thread(
+                cls._instance._queue = Queue()
+                cls._instance._sentinel = object()
+                cls._instance._session = uuid4()
+                cls._instance._executor = ThreadPoolExecutor(max_workers=4)
+                cls._instance._dispatcher_thread = Thread(
                     target=cls._instance._process_events, name="PubSubProcessor", daemon=True
                 )
                 cls._instance._dispatcher_thread.start()
@@ -75,65 +37,63 @@ class PubSub():
         return cls._instance
 
     def subscribe(self, topic: str, callback: Callback):
-        if hasattr(callback, "__self__") and getattr(callback, "__self__") is not None:
-            callback_reference = WeakMethod(callback)
-        else:
-            callback_reference = callback
-
+        cb_ref = WeakMethod(callback) if hasattr(callback, "__self__") else callback
         with self._lock:
-            self._subscribers.setdefault(topic, []).append(callback_reference)
+            self._subscribers.setdefault(topic, []).append(cb_ref)
 
     def unsubscribe(self, topic: str, callback: Callback):
         with self._lock:
             if topic in self._subscribers:
                 self._subscribers[topic] = [
-                    callback_reference for callback_reference in self._subscribers[topic]
-                    if not self._compare_callback(callback_reference, callback)
+                    cb_ref for cb_ref in self._subscribers[topic]
+                    if not self._compare_callback(cb_ref, callback)
                 ]
-
-            if topic in self._subscribers and not self._subscribers[topic]:
-                del self._subscribers[topic]
+                if not self._subscribers[topic]:
+                    del self._subscribers[topic]
 
     def publish(self, topic: str, *args: Args, **kwargs: Kwargs):
         self._queue.put((topic, args, kwargs))
 
     def stop(self):
-        self._queue.put(None)
+        self._queue.put(self._sentinel)
         self._dispatcher_thread.join(timeout=1)
-        _global_callback_dispatcher.stop()
+        self._executor.shutdown(wait=False)
 
     def session(self) -> UUID:
-        return self.__session
-        
+        return self._session
+
     def _process_events(self):
         while True:
             item = self._queue.get()
-
+            
             if item is self._sentinel:
-                self._queue.put(self._sentinel)
                 break
+
+            if item is None:
+                continue
 
             topic, args, kwargs = cast(Tuple[str, Args, Kwargs], item)
             
             with self._lock:
                 subscribers = self._subscribers.get(topic, []).copy()
 
-            for callback_reference in subscribers:
-                callback = self._resolve_callback(callback_reference)
-                
+            for cb_ref in subscribers:
+                callback = self._resolve_callback(cb_ref)
                 if callback:
-                    _global_callback_dispatcher.dispatch(callback, *args, **kwargs)
+                    # executa em thread pool para não travar o loop
+                    self._executor.submit(self._safe_call, callback, *args, **kwargs)
+
+    def _safe_call(self, callback: Callback, *args: Args, **kwargs: Kwargs):
+        try:
+            callback(*args, **kwargs)
+        except Exception as error:
+            print(f"[PubSub] Error running {callback}: {error}")
 
     @staticmethod
-    def _resolve_callback(cb_ref: Union[Callback, WeakMethod[Any]]) -> Union[Callback, None]:
-        if isinstance(cb_ref, WeakMethod):
-            return cb_ref()
-        
-        return cb_ref
+    def _resolve_callback(cb_ref: Union[Callback, WeakMethod[Any]]) -> Optional[Callback]:
+        return cb_ref() if isinstance(cb_ref, WeakMethod) else cb_ref
 
     @staticmethod
     def _compare_callback(cb_ref: Union[Callback, WeakMethod[Any]], callback: Callback) -> bool:
-        """Compara callback forte ou weakref"""
         resolved = PubSub._resolve_callback(cb_ref)
-        
         return resolved is callback
