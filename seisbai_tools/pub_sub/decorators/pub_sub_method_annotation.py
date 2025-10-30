@@ -21,7 +21,12 @@ def PubSubMethodAnnotation(cls: Type[T]):
                 topic = getattr(attribute, "_event_topic")
 
                 def wrapper(*args: Args, _attribute: Callback = attribute, **kwargs: Kwargs):
-                    _attribute(self, *args, **kwargs)
+                    try:
+                        _attribute(self, *args, **kwargs)
+                    except Exception as e:
+                        import traceback
+                        print(f"[CallbackDispatcher] Error running {_attribute.__qualname__}: {e!r}")
+                        traceback.print_exc()
 
                 PubSub().subscribe(topic, wrapper)
 
