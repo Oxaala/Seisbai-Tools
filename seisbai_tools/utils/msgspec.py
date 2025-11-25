@@ -1,66 +1,71 @@
 from datetime import datetime
-from typing import Any, Dict, Type, TypeVar
-from msgspec import json
+from uuid import UUID
+from typing import Any
+import msgspec
+import importlib
 from ulid import ULID, from_str
 
-T = TypeVar("T")
+def serialize(obj: Any) -> bytes:
+    def convert(o):
+        # Tipos especiais
+        if isinstance(o, ULID):
+            return {"__type__": "ULID", "value": str(o)}
+        if isinstance(o, UUID):
+            return {"__type__": "UUID", "value": str(o)}
+        if isinstance(o, datetime):
+            return {"__type__": "datetime", "value": o.isoformat()}
 
-def _safe_serialize(value: Any):
-    """Converte tipos não nativos para representações serializáveis seguras"""
-    if isinstance(value, ULID):
-        return {"__type__": "ulid", "value": str(value)}
-    elif isinstance(value, datetime):
-        return {"__type__": "datetime", "value": value.isoformat()}
-    elif isinstance(value, (int, float, str, bool, type(None))):
-        return value
-    else:
-        return {"__type__": "repr", "value": repr(value)}
+        # msgspec.Struct
+        if isinstance(o, msgspec.Struct):
+            data = {field: convert(getattr(o, field)) for field in o.__struct_fields__}
+            data["__class_path__"] = f"{o.__class__.__module__}.{o.__class__.__name__}"
+            return data
 
-def struct_to_dict(element: Any):
-    """Cria dict serializável da instância (funciona com msgspec.Struct)"""
-    fields = getattr(element, "__struct_fields__", [])
-    return {k: _safe_serialize(getattr(element, k)) for k in fields}
+        # listas
+        if isinstance(o, list):
+            return [convert(i) for i in o]
 
-def _safe_deserialize(value: Any) -> Any:
-    """Converte representações serializadas de volta para objetos reais"""
-    if value is None:
-        return None
+        # dicts
+        if isinstance(o, dict):
+            return {k: convert(v) for k, v in o.items()}
 
-    # Só tenta interpretar como tipo especial se for um dicionário
-    if isinstance(value, dict) and "__type__" in value:
-        type_name = value["__type__"]
-        val = value["value"]
+        # primitivos
+        return o
 
-        if type_name == "ulid":
-            return from_str(val)
-        elif type_name == "datetime":
-            return datetime.fromisoformat(val)
-        elif type_name == "repr":
-            return val
-        else:
-            # Caso o tipo seja desconhecido, retorna o dicionário original
-            return value
+    return msgspec.json.encode(convert(obj))
 
-    elif isinstance(value, list):
-        return [_safe_deserialize(v) for v in value]
 
-    elif isinstance(value, dict):
-        # Recursivamente trata dicionários comuns
-        return {k: _safe_deserialize(v) for k, v in value.items()}
+# --- Desserialização automática ---
+def deserialize(data: bytes) -> Any:
+    obj = msgspec.json.decode(data)
 
-    else:
-        # Tipos primitivos (int, float, str, bool, etc.)
-        return value
+    def restore(o):
+        if isinstance(o, dict):
+            # Tipos especiais
+            if "__type__" in o:
+                t = o["__type__"]
+                if t == "ULID":
+                    return from_str(o["value"])
+                if t == "UUID":
+                    return UUID(o["value"])
+                if t == "datetime":
+                    return datetime.fromisoformat(o["value"])
 
-def dict_to_struct(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Restaura campos serializados via _safe_deserialize"""
-    return {k: _safe_deserialize(v) for k, v in data.items()}
+            # Instância de msgspec.Struct
+            cls_path = o.get("__class_path__")
+            if cls_path:
+                module_name, class_name = cls_path.rsplit(".", 1)
+                module = importlib.import_module(module_name)
+                cls = getattr(module, class_name)
+                data = {k: restore(v) for k, v in o.items() if k != "__class_path__"}
+                return cls(**data)
 
-def serialize_to_json(data: Any):
-    return json.encode(data).decode()
+            # dict normal
+            return {k: restore(v) for k, v in o.items()}
 
-def serialize_to_bytes(data: Any):
-    return json.encode(data)
+        elif isinstance(o, list):
+            return [restore(i) for i in o]
 
-def deserialize(data: bytes, type: Type[T]) -> T:
-    return json.decode(data, type=type)
+        return o
+
+    return restore(obj)

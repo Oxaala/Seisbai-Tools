@@ -1,8 +1,8 @@
-from dataclasses import dataclass, field
 from typing import Dict, List, Tuple
+from msgspec import  Struct, field
 
-@dataclass(frozen=True)
-class FaultDetectionParamsDTO:
+
+class FaultDetectionParamsDTO(Struct, frozen=True, tag=True):
     """
     Data Transfer Object (DTO) que agrupa os parâmetros necessários
     para configurar e executar a tarefa de detecção de falhas sísmicas.

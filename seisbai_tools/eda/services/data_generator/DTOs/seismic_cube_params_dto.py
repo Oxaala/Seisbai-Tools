@@ -1,7 +1,7 @@
 from msgspec import Struct
 
 
-class SeismicCubeParamsDTO(Struct, frozen=True):
+class SeismicCubeParamsDTO(Struct, frozen=True, tag=True):
     """
     Data Transfer Object (DTO) para parametrização de um cubo sísmico sintético.
 

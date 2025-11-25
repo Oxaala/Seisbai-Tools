@@ -1,9 +1,8 @@
-from dataclasses import dataclass, field
 from typing import Dict, List
+from msgspec import Struct, field
 
 
-@dataclass(frozen=True)
-class FileTransactionParamsDTO:
+class FileTransactionParamsDTO(Struct, frozen=True, tag=True):
     """Parâmetros para uma transação de arquivo genérica.
 
     - operation: nome lógico da operação (ex.: "copy", "transform", "compress").
