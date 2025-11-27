@@ -52,7 +52,13 @@ class PubSub:
                     del self._subscribers[topic]
 
     def publish(self, topic: str, *args: Args, **kwargs: Kwargs):
-        self._queue.put((topic, args, kwargs))
+        with self._lock:
+            subscribers = self._subscribers.get(topic, []).copy()
+
+        for cb_ref in subscribers:
+            callback = self._resolve_callback(cb_ref)
+            if callback:
+                self._safe_call(callback, *args, **kwargs)
 
     def stop(self):
         self._queue.put(self._sentinel)
