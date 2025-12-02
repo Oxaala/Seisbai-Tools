@@ -1,26 +1,30 @@
 from typing import List
 from uuid import UUID
+
+from seisbai_tools.file_system.manager import FileSystemInfo
 from ....events import CompletedEvent
 
 
 class NetworkConstructorCompletedEvent(CompletedEvent, frozen=True, kw_only=True):
     """
-    Evento emitido quando a execução de um job de construção de rede é concluída com sucesso.
+    Evento emitido quando a execução de um job de construção ou treinamento de rede neural
+    é concluída com sucesso.
 
-    Este evento sinaliza que o processamento do job de construção e/ou
-    treinamento da rede neural foi finalizado, permitindo que os consumidores
-    do evento acessem os resultados gerados ou atualizem seus estados e interfaces.
+    Este evento permite que consumidores (UI, orquestradores, logs, etc.) reajam ao término
+    do job, acessando os artefatos gerados, atualizando estados ou disparando etapas
+    subsequentes do workflow.
 
     Herda de :class:`CompletedEvent`.
 
+    ---
     Atributos
     ---------
     dataset_id : UUID
         Identificador único do dataset associado ao job concluído.
 
-    output_paths : List[str]
-        Lista de caminhos para os arquivos de saída gerados pelo job, como
-        modelos treinados ou artefatos derivados.
+    output : FileSystemInfo
+        Informações sobre os arquivos de saída gerados pelo job, incluindo
+        pesos da rede, checkpoints, logs, métricas e outros artefatos relevantes.
     """
     dataset_id: UUID
-    output_paths: List[str]
+    output: FileSystemInfo
