@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from seisbai_tools.file_system.manager import FileSystemInfo
+from seisbai_tools.file_system.manager import FileSystemPathInfo
 from ....events import StartedEvent
 
 
@@ -17,14 +17,14 @@ class HorizonDetectionStartedEvent(StartedEvent, frozen=True, kw_only=True):
     dataset_id : UUID
         Identificador único do dataset associado ao job de detecção de horizontes.
 
-    seismic : FileSystemInfo
+    seismic : FileSystemPathInfo
         Informações sobre o arquivo sísmico usado como entrada no processo
         de detecção de horizontes.
 
-    model : FileSystemInfo
+    model : FileSystemPathInfo
         Informações sobre o diretório ou arquivo do modelo de detecção que será
         utilizado para processar o dataset.
     """
     dataset_id: UUID
-    seismic: FileSystemInfo
-    model: FileSystemInfo
+    seismic: FileSystemPathInfo
+    model: FileSystemPathInfo

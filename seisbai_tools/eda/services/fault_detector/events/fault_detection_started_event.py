@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from seisbai_tools.file_system.manager import FileSystemInfo
+from seisbai_tools.file_system.manager import FileSystemPathInfo
 from ....events import StartedEvent
 
 
@@ -17,15 +17,15 @@ class FaultDetectionStartedEvent(StartedEvent, frozen=True, kw_only=True):
     dataset_id : UUID
         Identificador único do dataset associado ao job.
 
-    seismic : FileSystemInfo
+    seismic : FileSystemPathInfo
         Informações sobre o arquivo sísmico utilizado no processo, incluindo
         caminho, tamanho, tipo e metadados definidos pelo sistema de arquivos.
 
-    model : FileSystemInfo
+    model : FileSystemPathInfo
         Informações sobre o modelo de rede neural empregado na detecção, também
         representado por metadados fornecidos pelo sistema de arquivos.
     """
 
     dataset_id: UUID
-    seismic: FileSystemInfo
-    model: FileSystemInfo
+    seismic: FileSystemPathInfo
+    model: FileSystemPathInfo

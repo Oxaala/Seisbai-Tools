@@ -1,4 +1,4 @@
-from seisbai_tools.file_system.manager import FileSystemInfo
+from seisbai_tools.file_system.manager import FileSystemPathInfo
 from ....events import CompletedEvent
 from uuid import UUID
 
@@ -52,9 +52,9 @@ class SeismicCubeDatasetGenerationCompletedEvent(CompletedEvent, frozen=True, kw
     -------
     >>> SeismicCubeDatasetGenerationCompletedEvent(
     ...     dataset_id=UUID("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
-    ...     output=FileSystemInfo(path="/datasets/synthetics/cube001")
+    ...     output=FileSystemPathInfo(path="/datasets/synthetics/cube001")
     ... )
     """
 
     dataset_id: UUID
-    output: FileSystemInfo
+    output: FileSystemPathInfo

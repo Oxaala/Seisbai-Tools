@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Tuple
 from msgspec import Struct, field
 
-from seisbai_tools.file_system.manager import FileSystemInfo
+from seisbai_tools.file_system.manager import FileSystemPathInfo
 
 
 class NetworkConstructorParamsDTO(Struct, frozen=True, tag=True):
@@ -15,11 +15,11 @@ class NetworkConstructorParamsDTO(Struct, frozen=True, tag=True):
 
     Attributes
     ----------
-    output : FileSystemInfo
+    output : FileSystemPathInfo
         Diretório onde a rede treinada e seus artefatos (pesos, logs,
         checkpoints, gráficos, etc.) serão armazenados.
 
-    dataset : FileSystemInfo
+    dataset : FileSystemPathInfo
         Caminho para o dataset de entrada a ser utilizado durante o
         treinamento da rede.
 
@@ -61,8 +61,8 @@ class NetworkConstructorParamsDTO(Struct, frozen=True, tag=True):
         Exemplo: número de filtros, profundidade da U-Net, kernel_size etc.
     """
     # Caminhos e I/O
-    output: FileSystemInfo = field(default_factory=FileSystemInfo)
-    dataset: FileSystemInfo = field(default_factory=FileSystemInfo)
+    output: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
+    dataset: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
 
     # Seleção de modelo e config
     model_type: str = "unet"

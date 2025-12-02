@@ -2,7 +2,7 @@ from typing import Optional, Sequence, Tuple, Union
 from uuid import UUID, uuid4
 from msgspec import Struct, field
 
-from seisbai_tools.file_system.manager import FileSystemInfo
+from seisbai_tools.file_system.manager import FileSystemPathInfo
 from ....commands import StartCommand
 from ..DTOs import (
     GaussianDeformationParamsDTO,
@@ -112,7 +112,7 @@ class CreateSeismicCubeDatasetCommand(StartCommand, frozen=True, kw_only=True):
     ...     samples=4,
     ...     seed=123,
     ...     dimensions=(256, 256, 256),
-    ...     output=FileSystemInfo(path="/data/cubes"),
+    ...     output=FileSystemPathInfo(path="/data/cubes"),
     ...     transformations_pipeline=[
     ...         TransformationStep(
     ...             name="gaussian",
@@ -127,7 +127,7 @@ class CreateSeismicCubeDatasetCommand(StartCommand, frozen=True, kw_only=True):
     samples: int = field(default=1)
     dimensions: Tuple[int, int, int] = field(default=(128, 128, 128))
     seed: Optional[int] = field(default=None)
-    output: FileSystemInfo = field(default_factory=FileSystemInfo)
+    output: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
 
     seismic_params: SeismicCubeParamsDTO = field(
         default_factory=lambda: SeismicCubeParamsDTO(

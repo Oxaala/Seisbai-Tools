@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 
-from seisbai_tools.file_system.manager import FileSystemInfo
+from seisbai_tools.file_system.manager import FileSystemPathInfo
 from ....events import CompletedEvent
 
 
@@ -18,11 +18,11 @@ class FaultDetectionCompletedEvent(CompletedEvent, frozen=True, kw_only=True):
     dataset_id : UUID
         Identificador único do dataset associado ao job.
 
-    output : FileSystemInfo
+    output : FileSystemPathInfo
         Informações detalhadas sobre os arquivos gerados no processo,
         incluindo caminhos, tamanhos, tipos e metadados definidos pelo
         sistema de arquivos utilizado.
     """
 
     dataset_id: UUID
-    output: FileSystemInfo
+    output: FileSystemPathInfo

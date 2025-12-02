@@ -1,7 +1,7 @@
 from typing import Dict, List, Tuple
 from msgspec import  Struct, field
 
-from seisbai_tools.file_system.manager import FileSystemInfo
+from seisbai_tools.file_system.manager import FileSystemPathInfo
 
 
 class FaultDetectionParamsDTO(Struct, frozen=True, tag=True):
@@ -33,8 +33,8 @@ class FaultDetectionParamsDTO(Struct, frozen=True, tag=True):
     output_dir : str, default="output/faults"
         Diretório onde os resultados da detecção de falhas serão salvos.
     """
-    seismic_path: FileSystemInfo = field(default_factory=FileSystemInfo)
-    model_path: FileSystemInfo = field(default_factory=FileSystemInfo)
+    seismic_path: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
+    model_path: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
     shape: Tuple[int, int] = (128, 128)
     step: int = 20
     axes: Dict[str, List[int]] = field(default_factory=lambda: {"ilines": [], "xlines": [], "depths": []})

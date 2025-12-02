@@ -1,5 +1,5 @@
 from msgspec import Struct, field
-from seisbai_tools.file_system.manager import FileSystemInfo
+from seisbai_tools.file_system.manager import FileSystemPathInfo
 
 
 class HorizonDetectionParamsDTO(Struct, frozen=True, kw_only=True, tag=True):
@@ -9,13 +9,13 @@ class HorizonDetectionParamsDTO(Struct, frozen=True, kw_only=True, tag=True):
 
     Attributes
     ----------
-    seismic : FileSystemInfo
+    seismic : FileSystemPathInfo
         Caminho para o arquivo sísmico de entrada.
 
-    model : FileSystemInfo
+    model : FileSystemPathInfo
         Diretório onde o modelo está armazenado.
 
-    mask : FileSystemInfo
+    mask : FileSystemPathInfo
         Caminho para a máscara utilizada na detecção.
 
     threshold : float
@@ -27,14 +27,14 @@ class HorizonDetectionParamsDTO(Struct, frozen=True, kw_only=True, tag=True):
     min_points : int
         Número mínimo de pontos para formar um cluster válido.
 
-    output : FileSystemInfo
+    output : FileSystemPathInfo
         Diretório onde os horizontes detectados serão salvos.
     """
 
-    seismic: FileSystemInfo = field(default_factory=FileSystemInfo)
-    model: FileSystemInfo = field(default_factory=FileSystemInfo)
-    mask: FileSystemInfo = field(default_factory=FileSystemInfo)
+    seismic: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
+    model: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
+    mask: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
     threshold: float = 0.1
     eps: float = 0.05
     min_points: int = 50
-    output: FileSystemInfo = field(default_factory=FileSystemInfo)
+    output: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)

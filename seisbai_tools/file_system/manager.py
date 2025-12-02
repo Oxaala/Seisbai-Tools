@@ -6,7 +6,7 @@ from seisbai_tools.file_system.factory import FileSystemFactory
 from seisbai_tools.file_system.interface import FileSystemInterface
 from .types import ProgressCallback
 
-class FileSystemInfo(Struct, tag=True):
+class FileSystemPathInfo(Struct, tag=True):
     user_hash: str = field(default="")
     project_folder: str = field(default="")
     file_name: str = field(default="")
