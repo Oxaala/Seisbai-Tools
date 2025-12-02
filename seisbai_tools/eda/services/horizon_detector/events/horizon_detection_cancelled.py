@@ -1,12 +1,12 @@
 from uuid import UUID
-from ....events import CanceledEvent
+from ....events import CancelledEvent
 
 
-class HorizonDetectionCanceledEvent(CanceledEvent, frozen=True, kw_only=True):
+class HorizonDetectionCancelledEvent(CancelledEvent, frozen=True, kw_only=True):
     """
     Evento emitido quando um job de detecção de horizontes é cancelado.
 
-    Este evento herda de :class:`CanceledEvent` e sinaliza que o processamento
+    Este evento herda de :class:`CancelledEvent` e sinaliza que o processamento
     do job foi interrompido antes da conclusão, permitindo que os consumidores
     do evento ajustem seus estados ou interfaces conforme necessário.
 

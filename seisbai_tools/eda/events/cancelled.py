@@ -1,7 +1,7 @@
 from uuid import UUID
 from .event import Event
 
-class CanceledEvent(Event, frozen=True, kw_only=True):
+class CancelledEvent(Event, frozen=True, kw_only=True):
     """
     Evento que representa o cancelamento de uma operação.
 

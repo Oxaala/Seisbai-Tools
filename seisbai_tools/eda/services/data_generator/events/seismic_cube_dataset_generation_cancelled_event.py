@@ -1,8 +1,8 @@
 from uuid import UUID
-from ....events import CanceledEvent
+from ....events import CancelledEvent
 
 
-class SeismicCubeDatasetGenerationCanceledEvent(CanceledEvent, frozen=True, kw_only=True):
+class SeismicCubeDatasetGenerationCancelledEvent(CancelledEvent, frozen=True, kw_only=True):
     """
     Evento emitido quando a geração de um dataset de cubo sísmico é cancelada.
 
