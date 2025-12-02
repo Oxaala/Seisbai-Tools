@@ -1,4 +1,6 @@
 from uuid import UUID
+
+from seisbai_tools.file_system.manager import FileSystemInfo
 from ....events import StartedEvent
 
 
@@ -6,24 +8,23 @@ class HorizonDetectionStartedEvent(StartedEvent, frozen=True, kw_only=True):
     """
     Evento emitido quando um job de detecção de horizontes é iniciado.
 
-    Este evento herda de :class:`StartedEvent` e fornece informações iniciais
-    sobre o job, incluindo o dataset e os parâmetros do modelo que será utilizado.
+    Este evento herda de :class:`StartedEvent` e carrega as informações essenciais
+    para rastrear o início do processo, incluindo os caminhos para os arquivos
+    sísmicos e o modelo utilizado.
 
-    Atributos
-    ---------
+    Attributes
+    ----------
     dataset_id : UUID
         Identificador único do dataset associado ao job de detecção de horizontes.
 
-    seismic_path : str
-        Caminho para o arquivo sísmico de entrada utilizado no job.
+    seismic : FileSystemInfo
+        Informações sobre o arquivo sísmico usado como entrada no processo
+        de detecção de horizontes.
 
-    model_dir : str
-        Diretório onde o modelo de detecção de horizontes está armazenado.
-
-    model_name : str
-        Nome do modelo que será utilizado para o processo de detecção.
+    model : FileSystemInfo
+        Informações sobre o diretório ou arquivo do modelo de detecção que será
+        utilizado para processar o dataset.
     """
     dataset_id: UUID
-    seismic_path: str
-    model_dir: str
-    model_name: str
+    seismic: FileSystemInfo
+    model: FileSystemInfo
