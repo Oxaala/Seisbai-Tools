@@ -1,8 +1,19 @@
 from typing import Optional, Iterator
 
+from msgspec import Struct, field
+
 from seisbai_tools.file_system.factory import FileSystemFactory
 from seisbai_tools.file_system.interface import FileSystemInterface
 from .types import ProgressCallback
+
+class FileSystemInfo(Struct, tag=True):
+    user_hash: str = field(default="")
+    project_folder: str = field(default="")
+    file_name: str = field(default="")
+    folder_name: str = field(default="")
+
+    def build_path(self):
+        return f"{self.user_hash}/{self.project_folder}/{self.folder_name}/{self.file_name}"
 
 class FileSystemManager(FileSystemInterface):
     def __init__(self, backend: str, **kwargs):
