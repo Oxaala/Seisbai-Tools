@@ -6,26 +6,26 @@ from ....events import StartedEvent
 
 class FaultDetectionStartedEvent(StartedEvent, frozen=True, kw_only=True):
     """
-    Evento emitido quando um job de detecção de falhas é iniciado.
+    Evento emitido quando um job de detecção de falhas sísmicas é iniciado.
 
-    Esse evento sinaliza o começo do processo de detecção de falhas em um dataset
-    sísmico, permitindo que outros componentes acompanhem ou reajam ao início
-    do job, como serviços de monitoramento, rastreamento ou interfaces de usuário.
+    Este evento marca o início oficial do processo de detecção, permitindo que
+    orquestradores, serviços de monitoramento, dashboards ou interfaces de
+    acompanhamento atualizem o estado e iniciem mecanismos de rastreamento.
 
-    Attributes
-    ----------
+    Atributos
+    ---------
     dataset_id : UUID
-        Identificador único do dataset associado ao job.
+        Identificador único do dataset relacionado ao job iniciado.
 
-    seismic : FileSystemPathInfo
-        Informações sobre o arquivo sísmico utilizado no processo, incluindo
-        caminho, tamanho, tipo e metadados definidos pelo sistema de arquivos.
+    seismic_path : FileSystemPathInfo
+        Informações sobre o volume sísmico de entrada, incluindo o caminho
+        no sistema de arquivos abstrato (local, SMB, S3 etc.) e seus metadados.
 
-    model : FileSystemPathInfo
-        Informações sobre o modelo de rede neural empregado na detecção, também
-        representado por metadados fornecidos pelo sistema de arquivos.
+    model_path : FileSystemPathInfo
+        Caminho para o modelo de rede neural utilizado na detecção, incluindo
+        metadados disponibilizados pelo gerenciador de arquivos.
     """
 
     dataset_id: UUID
-    seismic: FileSystemPathInfo
-    model: FileSystemPathInfo
+    seismic_path: FileSystemPathInfo
+    model_path: FileSystemPathInfo

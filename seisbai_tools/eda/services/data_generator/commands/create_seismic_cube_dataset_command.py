@@ -14,26 +14,22 @@ from ..DTOs import (
 
 class TransformationStep(Struct, frozen=True, kw_only=True):
     """
-    Representa uma única etapa de transformação aplicada ao cubo sísmico.
+    Representa uma etapa do pipeline de transformações aplicadas ao cubo sísmico.
 
-    Esta estrutura define um passo do pipeline de transformações aplicado
-    ao cubo gerado. Cada transformação encapsula:
+    Cada transformação contém:
+    - um identificador (`name`) que define sua categoria/implementação;
+    - um DTO (`params`) contendo os parâmetros específicos da transformação.
 
-        1. Um identificador (`name`) que determina qual transformação será aplicada.
-        2. Um objeto DTO (`params`) contendo parâmetros específicos da transformação.
+    A estrutura é imutável (`frozen=True`) para garantir consistência durante a
+    execução do pipeline de geração.
 
-    Ela é imutável (`frozen=True`), garantindo que a configuração do pipeline
-    não seja alterada durante o processamento.
-
-    ---
     Atributos
     ---------
     name : str
-        Nome da transformação. Deve corresponder a um identificador suportado
-        pelo pipeline de geração (ex.: "gaussian", "planar", "fault").
+        Nome ou identificador da transformação (ex.: "gaussian", "fault", "planar").
+
     params : Union[GaussianDeformationParamsDTO, PlanarDeformationParamsDTO, FaultDeformationParamsDTO]
-        Objeto contendo os parâmetros específicos da transformação escolhida.
-        Cada tipo de transformação possui seu próprio DTO especializado.
+        Instância do DTO contendo os parâmetros específicos da transformação.
     """
 
     name: str
@@ -48,63 +44,47 @@ class CreateSeismicCubeDatasetCommand(StartCommand, frozen=True, kw_only=True):
     """
     Comando que inicia a geração de um dataset de cubos sísmicos sintéticos.
 
-    Este comando integra o fluxo EDA (Event-Driven Architecture) do Seisbai e
-    atua como ponto de entrada para o processo assíncrono de geração. Ele
-    encapsula todos os parâmetros necessários para produzir e armazenar o
-    conjunto de cubos sísmicos, incluindo dimensões, propriedades físicas,
-    informações do sistema de arquivos e um pipeline opcional de transformações.
+    O comando integra o fluxo EDA (Event-Driven Architecture) do Seisbai,
+    encapsulando todas as informações necessárias para que o worker responsável
+    execute a geração, aplique transformações estruturais e armazene os resultados.
 
-    ---
     Propósito
     ---------
-    - Acionar o gerador de cubos sísmicos.
-    - Transportar metadados necessários para os handlers e workers.
-    - Definir parâmetros de reprodutibilidade (via seed).
-    - Descrever transformações estruturais aplicadas ao cubo.
+    - Acionar o gerador de cubos sísmicos sintéticos.
+    - Transportar parâmetros físicos, estruturais e operacionais.
+    - Fornecer metadados (como seed e prefixo).
+    - Definir o pipeline opcional de transformações após a geração.
+    - Indicar o destino final dos arquivos (via `FileSystemPathInfo`).
 
-    ---
     Atributos
     ---------
-    dataset_id : uuid.UUID, default=uuid4()
-        Identificador único usado para correlacionar eventos produzidos durante
-        a geração do dataset. Criado automaticamente caso não seja informado.
+    dataset_id : UUID, default=uuid4()
+        Identificador único para rastrear o job de geração do dataset.
 
     prefix : str, default="cube"
-        Prefixo usado ao nomear os arquivos gerados.
+        Prefixo base utilizado para nomear os arquivos gerados.
 
     samples : int, default=1
-        Número de cubos sísmicos que serão gerados pelo pipeline.
+        Número de cubos sísmicos a serem gerados.
 
     dimensions : Tuple[int, int, int], default=(128, 128, 128)
         Dimensões do cubo no formato:
             (inline, xline, depth)
 
     seed : Optional[int], default=None
-        Semente utilizada para tornar o processo de geração determinístico.
+        Semente para tornar o processo determinístico.
 
-    output : FileSystemInfo
-        Informações sobre o destino da saída (local, SMB, S3 etc.).
-        Permite abstrair diferentes backends de armazenamento.
+    output_path : FileSystemPathInfo
+        Informações sobre o destino dos arquivos gerados
+        (ex.: filesystem local, SMB, NFS, etc.).
 
     seismic_params : SeismicCubeParamsDTO
-        Objeto DTO contendo parâmetros geofísicos do modelo sísmico, como:
-        velocidade mínima/máxima, número de camadas, frequência da onda,
-        parâmetros de refletividade, resolução temporal etc.
+        Parâmetros geofísicos do modelo sísmico (velocidade, camadas,
+        refletividade, frequência, sampling rate, etc.).
 
     transformations_pipeline : Sequence[TransformationStep], default=[]
-        Pipeline sequencial de transformações aplicadas ao cubo após sua
-        geração inicial. Cada transformação é definida por um `TransformationStep`.
-
-    ---
-    Uso
-    ---
-    Este comando normalmente é enviado para um **orquestrador EDA** que:
-
-        - inicializa estruturas de rastreamento de progresso
-        - dispara eventos `Started`, `Progress`, `Completed`, `Failed`
-        - executa a geração do(s) cubo(s)
-        - aplica o pipeline de transformações
-        - salva resultados no sistema de arquivos desejado
+        Lista ordenada de transformações aplicadas após a geração inicial
+        do cubo sísmico.
 
     Exemplo
     -------
@@ -112,7 +92,7 @@ class CreateSeismicCubeDatasetCommand(StartCommand, frozen=True, kw_only=True):
     ...     samples=4,
     ...     seed=123,
     ...     dimensions=(256, 256, 256),
-    ...     output=FileSystemPathInfo(path="/data/cubes"),
+    ...     output_path=FileSystemPathInfo(path="/data/cubes"),
     ...     transformations_pipeline=[
     ...         TransformationStep(
     ...             name="gaussian",
@@ -127,7 +107,7 @@ class CreateSeismicCubeDatasetCommand(StartCommand, frozen=True, kw_only=True):
     samples: int = field(default=1)
     dimensions: Tuple[int, int, int] = field(default=(128, 128, 128))
     seed: Optional[int] = field(default=None)
-    output: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
+    output_path: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
 
     seismic_params: SeismicCubeParamsDTO = field(
         default_factory=lambda: SeismicCubeParamsDTO(

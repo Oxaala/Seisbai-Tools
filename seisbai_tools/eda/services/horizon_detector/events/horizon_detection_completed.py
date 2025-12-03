@@ -6,20 +6,26 @@ from ....events import CompletedEvent
 
 class HorizonDetectionCompletedEvent(CompletedEvent, frozen=True, kw_only=True):
     """
-    Evento emitido quando o processo de detecção de horizontes é concluído com sucesso.
+    Evento emitido quando o processo de detecção de horizontes é concluído
+    com sucesso.
 
-    Este evento herda de :class:`CompletedEvent` e indica que o job associado foi
-    finalizado, disponibilizando as informações sobre o diretório de saída.
+    Este evento herda de :class:`CompletedEvent` e indica que o job associado
+    terminou corretamente, permitindo que consumidores do evento acessem os
+    artefatos produzidos, atualizem interfaces de usuário ou desencadeiem
+    novos estágios do pipeline.
 
-    Attributes
-    ----------
+    Atributos
+    ---------
     dataset_id : UUID
-        Identificador único do dataset para o qual a detecção de horizontes foi executada.
+        Identificador único do dataset para o qual o processo de detecção
+        de horizontes foi realizado.
 
-    output : FileSystemPathInfo
-        Informações sobre o sistema de arquivos onde os resultados foram gerados,
-        incluindo caminhos dos arquivos de saída (ex.: horizontes detectados, máscaras
-        processadas, resultados intermediários).
+    output_path : FileSystemPathInfo
+        Informações sobre o local onde os resultados foram armazenados,
+        incluindo metadados do sistema de arquivos, caminhos dos arquivos
+        gerados (como superfícies detectadas, máscaras ou representações
+        intermediárias).
     """
+
     dataset_id: UUID
-    output: FileSystemPathInfo
+    output_path: FileSystemPathInfo
