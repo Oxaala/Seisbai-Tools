@@ -8,16 +8,32 @@ class FileSystemInterface(ABC):
         ...
 
     @abstractmethod
-    def upload(self, local_path: str, remote_path: str, progress: Optional[ProgressCallback] = None):
+    def upload(
+            self,
+            local_path: str,
+            remote_path: str,
+            chunk_size: int,
+            progress_callback: Optional[ProgressCallback]
+    ):
         ...
 
     @abstractmethod
-    def download(self, remote_path: str, local_path: str, progress: Optional[ProgressCallback] = None):
+    def download(
+            self,
+            remote_path: str,
+            local_path: str,
+            chunk_size: int,
+            progress_callback: Optional[ProgressCallback]
+    ):
         ...
 
     @abstractmethod
-    def read_file_chunks(self, remote_path: str, chunk_size: int = 1024*1024,
-                         progress: Optional[ProgressCallback] = None) -> Iterator[bytes]:
+    def read_file_chunks(
+            self,
+            remote_path: str,
+            chunk_size: int,
+            progress_callback: Optional[ProgressCallback]
+    ) -> Iterator[bytes]:
         ...
 
     @abstractmethod

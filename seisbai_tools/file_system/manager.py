@@ -22,15 +22,31 @@ class FileSystemManager(FileSystemInterface):
     def connect(self):
         self.client.connect()
 
-    def upload(self, local_path: str, remote_path: str, progress: Optional[ProgressCallback] = None):
-        self.client.upload(local_path, remote_path, progress)
+    def upload(
+            self,
+            local_path: str,
+            remote_path: str,
+            chunk_size: int = 1024 * 1024,
+            progress_callback: Optional[ProgressCallback] = None
+    ):
+        self.client.upload(local_path, remote_path, chunk_size, progress_callback)
 
-    def download(self, remote_path: str, local_path: str, progress: Optional[ProgressCallback] = None):
-        self.client.download(remote_path, local_path, progress)
+    def download(
+            self,
+            remote_path: str,
+            local_path: str,
+            chunk_size: int = 1024 * 1024,
+            progress_callback: Optional[ProgressCallback] = None
+    ):
+        self.client.download(remote_path, local_path, chunk_size, progress_callback)
 
-    def read_file_chunks(self, remote_path: str, chunk_size: int = 1024*1024,
-                         progress: Optional[ProgressCallback] = None) -> Iterator[bytes]:
-        return self.client.read_file_chunks(remote_path, chunk_size, progress)
+    def read_file_chunks(
+            self,
+            remote_path: str,
+            chunk_size: int = 1024 * 1024,
+            progress_callback: Optional[ProgressCallback] = None
+    ) -> Iterator[bytes]:
+        return self.client.read_file_chunks(remote_path, chunk_size, progress_callback)
 
     def listdir(self, path: str = "") -> list[str]:
         return self.client.listdir(path)

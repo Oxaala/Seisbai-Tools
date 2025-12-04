@@ -5,6 +5,7 @@ from typing import Iterator, Optional
 from ...interface import FileSystemInterface
 from ...types import ProgressCallback
 
+
 class NFSClient(FileSystemInterface):
     def __init__(self, mount_point: str):
         """
@@ -29,7 +30,13 @@ class NFSClient(FileSystemInterface):
         return os.path.join(self.mount_point, path.lstrip("/"))
 
     # -----------------------------
-    def upload(self, local_path: str, remote_path: str, progress: Optional[ProgressCallback] = None):
+    def upload(
+        self,
+        local_path: str,
+        remote_path: str,
+        chunk_size: int = 1024 * 1024,
+        progress: Optional[ProgressCallback] = None
+    ):
         if not self.connected:
             raise RuntimeError("Not connected")
 
@@ -38,7 +45,6 @@ class NFSClient(FileSystemInterface):
 
         total_size = os.path.getsize(local_path)
         processed = 0
-        chunk_size = 1024 * 1024
 
         with open(local_path, "rb") as src_file, open(dst, "wb") as dst_file:
             while chunk := src_file.read(chunk_size):
@@ -46,18 +52,25 @@ class NFSClient(FileSystemInterface):
                 dst_file.flush()
                 os.fsync(dst_file.fileno())
                 processed += len(chunk)
+
                 if progress:
                     progress(processed, total_size)
 
     # -----------------------------
-    def download(self, remote_path: str, local_path: str, progress: Optional[ProgressCallback] = None):
+    def download(
+        self,
+        remote_path: str,
+        local_path: str,
+        chunk_size: int = 1024 * 1024,
+        progress: Optional[ProgressCallback] = None
+    ):
         if not self.connected:
             raise RuntimeError("Not connected")
 
         src = self._full(remote_path)
+
         total_size = os.path.getsize(src)
         processed = 0
-        chunk_size = 1024 * 1024
 
         dir_name = os.path.dirname(local_path)
         if dir_name:
@@ -69,6 +82,7 @@ class NFSClient(FileSystemInterface):
                 dst_file.flush()
                 os.fsync(dst_file.fileno())
                 processed += len(chunk)
+
                 if progress:
                     progress(processed, total_size)
 
@@ -96,7 +110,13 @@ class NFSClient(FileSystemInterface):
             os.remove(full)
 
     # -----------------------------
-    def read_file_chunks(self, remote_path: str, chunk_size: int = 1024 * 1024, progress: Optional[ProgressCallback] = None) -> Iterator[bytes]:
+    def read_file_chunks(
+        self,
+        remote_path: str,
+        chunk_size: int = 1024 * 1024,
+        progress: Optional[ProgressCallback] = None
+    ) -> Iterator[bytes]:
+
         if not self.connected:
             raise RuntimeError("Not connected")
 
@@ -108,6 +128,7 @@ class NFSClient(FileSystemInterface):
             while chunk := f.read(chunk_size):
                 yield chunk
                 processed += len(chunk)
+
                 if progress:
                     progress(processed, total_size)
 

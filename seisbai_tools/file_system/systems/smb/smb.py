@@ -1,6 +1,6 @@
 from typing import Iterator, Optional
 from uuid import uuid4
-
+import os
 from smbprotocol.connection import Connection
 from smbprotocol.session import Session
 from smbprotocol.tree import TreeConnect
@@ -105,6 +105,11 @@ class SMBClient(FileSystemInterface):
     # -------------------------
     def download(self, remote_path: str, local_path: str, chunk_size: int = 1024*1024,
                  progress_callback: Optional[ProgressCallback] = None):
+        folder = os.path.dirname(local_path)
+
+        if folder:
+            os.makedirs(folder, exist_ok=True)
+
         fh = self._open_file(
             remote_path,
             CreateDisposition.FILE_OPEN,
