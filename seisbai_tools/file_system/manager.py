@@ -13,7 +13,11 @@ class FileSystemPathInfo(Struct, tag=True):
     folder_name: str = field(default="")
 
     def build_path(self):
-        return f"{self.user_hash}/{self.project_folder}/{self.folder_name}/{self.file_name}"
+        return "/".join(
+            path for path in [
+                self.user_hash, self.project_folder, self.folder_name, self.file_name
+            ] if path
+        )
 
 class FileSystemManager(FileSystemInterface):
     def __init__(self, backend: str, **kwargs):
