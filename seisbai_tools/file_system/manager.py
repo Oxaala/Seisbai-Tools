@@ -1,9 +1,9 @@
-from typing import Optional, Iterator
+from typing import Optional, Iterator, List
 
 from msgspec import Struct, field
 from seisbai_tools.file_system.factory import FileSystemFactory
 from seisbai_tools.file_system.interface import FileSystemInterface
-from .types import ProgressCallback, SyncMode, SyncProgressCallback
+from .types import ProgressCallback, SyncMode, SyncProgressCallback, RemoteFileInfo
 
 
 # -------------------------------------------------
@@ -98,6 +98,9 @@ class FileSystemManager(FileSystemInterface):
 
     def delete(self, path: str):
         self.client.delete(path)
+
+    def list_files_recursive(self, base_path: str) -> List[RemoteFileInfo]:
+        return self.client.list_files_recursive(base_path)
 
     # -------------------------------------------------
     def sync(
