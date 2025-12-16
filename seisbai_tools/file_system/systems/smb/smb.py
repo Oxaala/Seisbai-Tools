@@ -16,20 +16,20 @@ from smbprotocol.open import (
 )
 from smbprotocol.file_info import FileInformationClass
 
-# Mantenha os seus imports de tipos aqui
+# Importe apenas o RemoteFileInfo, esqueça o FileInfo
 from seisbai_tools.file_system.interface import FileSystemInterface
-from ...types import ProgressCallback, SyncMode, SyncProgressCallback, FileInfo
+from ...types import ProgressCallback, SyncMode, SyncProgressCallback, RemoteFileInfo
 
 DEFAULT_IMPERSONATION = ImpersonationLevel.Impersonation
 DEFAULT_DESIRED_ACCESS = (
-        FilePipePrinterAccessMask.GENERIC_READ |
-        FilePipePrinterAccessMask.GENERIC_WRITE
+    FilePipePrinterAccessMask.GENERIC_READ |
+    FilePipePrinterAccessMask.GENERIC_WRITE
 )
 DEFAULT_FILE_ATTRS = FileAttributes.FILE_ATTRIBUTE_NORMAL
 DEFAULT_SHARE_ACCESS = (
-        ShareAccess.FILE_SHARE_READ |
-        ShareAccess.FILE_SHARE_WRITE |
-        ShareAccess.FILE_SHARE_DELETE
+    ShareAccess.FILE_SHARE_READ |
+    ShareAccess.FILE_SHARE_WRITE |
+    ShareAccess.FILE_SHARE_DELETE
 )
 
 DIR_ACCESS_MASK = FilePipePrinterAccessMask.GENERIC_READ
@@ -114,16 +114,11 @@ class SMBClient(FileSystemInterface):
                 pass
 
     def _decode_name(self, name_bytes) -> str:
-        """
-        Helper para decodificar nomes retornados pelo SMB.
-        SMB geralmente usa UTF-16-LE.
-        """
+        """Helper para decodificar nomes retornados pelo SMB (UTF-16-LE)."""
         if isinstance(name_bytes, bytes):
             try:
-                # Tenta UTF-16 Little Endian (Padrão Windows/SMB)
                 return name_bytes.decode("utf-16-le").rstrip('\x00')
             except UnicodeDecodeError:
-                # Fallback para UTF-8 se falhar
                 try:
                     return name_bytes.decode("utf-8").rstrip('\x00')
                 except Exception:
@@ -177,11 +172,11 @@ class SMBClient(FileSystemInterface):
     # --------------------------------------------------
 
     def upload(
-            self,
-            local_path: str,
-            remote_path: str,
-            chunk_size: int = 1024 * 1024,
-            progress_callback: Optional[ProgressCallback] = None
+        self,
+        local_path: str,
+        remote_path: str,
+        chunk_size: int = 1024 * 1024,
+        progress_callback: Optional[ProgressCallback] = None
     ):
         self._ensure_remote_dirs(remote_path)
         remote_path = remote_path.replace("/", "\\")
@@ -209,11 +204,11 @@ class SMBClient(FileSystemInterface):
             fh.close()
 
     def download(
-            self,
-            remote_path: str,
-            local_path: str,
-            chunk_size: int = 1024 * 1024,
-            progress_callback: Optional[ProgressCallback] = None
+        self,
+        remote_path: str,
+        local_path: str,
+        chunk_size: int = 1024 * 1024,
+        progress_callback: Optional[ProgressCallback] = None
     ):
         os.makedirs(os.path.dirname(local_path), exist_ok=True)
         remote_path = remote_path.replace("/", "\\")
@@ -240,10 +235,10 @@ class SMBClient(FileSystemInterface):
             fh.close()
 
     def read_file_chunks(
-            self,
-            remote_path: str,
-            chunk_size: int = 1024 * 1024,
-            progress_callback: Optional[ProgressCallback] = None
+        self,
+        remote_path: str,
+        chunk_size: int = 1024 * 1024,
+        progress_callback: Optional[ProgressCallback] = None
     ) -> Iterator[bytes]:
 
         remote_path = remote_path.replace("/", "\\")
@@ -271,14 +266,14 @@ class SMBClient(FileSystemInterface):
             fh.close()
 
     # --------------------------------------------------
-    # RECURSIVE LIST (CORRIGIDO UTF-16)
+    # RECURSIVE LIST
     # --------------------------------------------------
 
-    def list_files_recursive(self, base_path: str) -> List[FileInfo]:
+    def list_files_recursive(self, base_path: str) -> List[RemoteFileInfo]:
         """
-        Lista recursivamente arquivos e retorna uma Lista de objetos FileInfo.
+        Lista recursivamente arquivos e retorna uma Lista de objetos RemoteFileInfo.
         """
-        files: List[FileInfo] = []  # Mudança: Agora é uma lista
+        files: List[RemoteFileInfo] = []
 
         # Limpeza inicial do path base (SMB exige backslash)
         base_path_clean = base_path.replace("/", "\\").strip("\\")
@@ -327,17 +322,16 @@ class SMBClient(FileSystemInterface):
                 else:
                     size = entry["end_of_file"].get_value()
 
-                    # Calcula caminho relativo para armazenar no FileInfo
+                    # Calcula caminho relativo
                     rel_path = full_path_smb
                     if base_path_clean and rel_path.startswith(base_path_clean):
-                        # Remove a base + a barra seguinte
                         rel_path = rel_path[len(base_path_clean):].lstrip("\\")
 
-                    # Padroniza para forward slash (/) para consistência interna
+                    # Padroniza para forward slash (/) para uso no dicionário
                     rel_key = rel_path.replace("\\", "/")
 
-                    # Adiciona à lista
-                    files.append(FileInfo(path=rel_key, size=size))
+                    # Adiciona à lista usando RemoteFileInfo e size_bytes
+                    files.append(RemoteFileInfo(path=rel_key, size_bytes=size))
 
         walk(base_path_clean)
         return files
@@ -347,30 +341,28 @@ class SMBClient(FileSystemInterface):
     # --------------------------------------------------
 
     def sync(
-            self,
-            local_base: str,
-            remote_base: str,
-            mode: SyncMode = SyncMode.BIDIRECTIONAL,
-            chunk_size: int = 1024 * 1024,
-            progress: Optional[SyncProgressCallback] = None,
-            dry_run: bool = False
+        self,
+        local_base: str,
+        remote_base: str,
+        mode: SyncMode = SyncMode.BIDIRECTIONAL,
+        chunk_size: int = 1024 * 1024,
+        progress: Optional[SyncProgressCallback] = None,
+        dry_run: bool = False
     ):
         local_base = os.path.abspath(local_base)
         os.makedirs(local_base, exist_ok=True)
 
-        # --- 1. Mapeamento Local ---
-        # Convertemos imediatamente para Dict para facilitar busca por chave (path)
-        local_files_map: Dict[str, FileInfo] = {}
+        # 1. Mapeamento Local (SIMPLIFICADO: path -> int)
+        local_files_map: Dict[str, int] = {}
         for root, _, files in os.walk(local_base):
             for f in files:
                 full_local = os.path.join(root, f)
                 rel = os.path.relpath(full_local, local_base).replace("\\", "/")
-                local_files_map[rel] = FileInfo(rel, os.path.getsize(full_local))
+                local_files_map[rel] = os.path.getsize(full_local)
 
-        # --- 2. Mapeamento Remoto ---
-        # Recebemos uma List, mas convertemos para Dict para performance O(1)
+        # 2. Mapeamento Remoto (Usa RemoteFileInfo)
         remote_list = self.list_files_recursive(remote_base)
-        remote_files_map: Dict[str, FileInfo] = {f.path: f for f in remote_list}
+        remote_files_map: Dict[str, RemoteFileInfo] = {f.path: f for f in remote_list}
 
         # Helpers de Path
         def get_local_abs(rel_p: str) -> str:
@@ -383,14 +375,16 @@ class SMBClient(FileSystemInterface):
                 return f"{clean_remote}\\{clean_rel}"
             return clean_rel
 
-        # --- PULL ---
-        if mode in (SyncMode.PULL, SyncMode.BIDIRECTIONAL):
-            # Iteramos sobre o MAPA remoto
-            for path, r_info in remote_files_map.items():
-                l_info = local_files_map.get(path)
+        #
 
-                if not l_info or l_info.size != r_info.size:
-                    if progress: progress(f"download:{path}", 0, r_info.size)
+        # --- PULL (Remoto -> Local) ---
+        if mode in (SyncMode.PULL, SyncMode.BIDIRECTIONAL):
+            for path, r_info in remote_files_map.items():
+                local_size = local_files_map.get(path)
+
+                # Se não existe localmente (None) OU tamanho diferente
+                if local_size is None or local_size != r_info.size_bytes:
+                    if progress: progress(f"download:{path}", 0, r_info.size_bytes)
                     if not dry_run:
                         self.download(
                             get_remote_abs(path),
@@ -399,13 +393,14 @@ class SMBClient(FileSystemInterface):
                             lambda p, t, e=path: progress(f"download:{e}", p, t) if progress else None
                         )
 
-        # --- PUSH ---
+        # --- PUSH (Local -> Remoto) ---
         if mode in (SyncMode.PUSH, SyncMode.BIDIRECTIONAL):
-            for path, l_info in local_files_map.items():
+            for path, l_size in local_files_map.items():
                 r_info = remote_files_map.get(path)
 
-                if not r_info or r_info.size != l_info.size:
-                    if progress: progress(f"upload:{path}", 0, l_info.size)
+                # Se não existe remotamente (None) OU tamanho diferente
+                if r_info is None or r_info.size_bytes != l_size:
+                    if progress: progress(f"upload:{path}", 0, l_size)
                     if not dry_run:
                         self.upload(
                             get_local_abs(path),
