@@ -1,4 +1,4 @@
-from typing import Iterator, Optional, Dict
+from typing import Iterator, Optional, Dict, List
 from uuid import uuid4
 import os
 
@@ -274,8 +274,13 @@ class SMBClient(FileSystemInterface):
     # RECURSIVE LIST (CORRIGIDO UTF-16)
     # --------------------------------------------------
 
-    def list_files_recursive(self, base_path: str) -> Dict[str, FileInfo]:
-        files: Dict[str, FileInfo] = {}
+    def list_files_recursive(self, base_path: str) -> List[FileInfo]:
+        """
+        Lista recursivamente arquivos e retorna uma Lista de objetos FileInfo.
+        """
+        files: List[FileInfo] = []  # Mudança: Agora é uma lista
+
+        # Limpeza inicial do path base (SMB exige backslash)
         base_path_clean = base_path.replace("/", "\\").strip("\\")
 
         def walk(current_dir: str):
@@ -306,8 +311,7 @@ class SMBClient(FileSystemInterface):
             fh.close()
 
             for entry in entries:
-                # --- CORREÇÃO AQUI ---
-                # Usamos o helper _decode_name para tratar UTF-16
+                # Decodifica nome (trata UTF-16)
                 name = self._decode_name(entry["file_name"].get_value())
 
                 if name in (".", ".."):
@@ -323,13 +327,17 @@ class SMBClient(FileSystemInterface):
                 else:
                     size = entry["end_of_file"].get_value()
 
+                    # Calcula caminho relativo para armazenar no FileInfo
                     rel_path = full_path_smb
                     if base_path_clean and rel_path.startswith(base_path_clean):
+                        # Remove a base + a barra seguinte
                         rel_path = rel_path[len(base_path_clean):].lstrip("\\")
 
+                    # Padroniza para forward slash (/) para consistência interna
                     rel_key = rel_path.replace("\\", "/")
 
-                    files[rel_key] = FileInfo(path=rel_key, size=size)
+                    # Adiciona à lista
+                    files.append(FileInfo(path=rel_key, size=size))
 
         walk(base_path_clean)
         return files
@@ -350,17 +358,21 @@ class SMBClient(FileSystemInterface):
         local_base = os.path.abspath(local_base)
         os.makedirs(local_base, exist_ok=True)
 
-        # 1. Mapeamento Local
-        local_files: Dict[str, FileInfo] = {}
+        # --- 1. Mapeamento Local ---
+        # Convertemos imediatamente para Dict para facilitar busca por chave (path)
+        local_files_map: Dict[str, FileInfo] = {}
         for root, _, files in os.walk(local_base):
             for f in files:
                 full_local = os.path.join(root, f)
                 rel = os.path.relpath(full_local, local_base).replace("\\", "/")
-                local_files[rel] = FileInfo(rel, os.path.getsize(full_local))
+                local_files_map[rel] = FileInfo(rel, os.path.getsize(full_local))
 
-        # 2. Mapeamento Remoto
-        remote_files = self.list_files_recursive(remote_base)
+        # --- 2. Mapeamento Remoto ---
+        # Recebemos uma List, mas convertemos para Dict para performance O(1)
+        remote_list = self.list_files_recursive(remote_base)
+        remote_files_map: Dict[str, FileInfo] = {f.path: f for f in remote_list}
 
+        # Helpers de Path
         def get_local_abs(rel_p: str) -> str:
             return os.path.join(local_base, rel_p.replace("/", os.sep))
 
@@ -371,10 +383,11 @@ class SMBClient(FileSystemInterface):
                 return f"{clean_remote}\\{clean_rel}"
             return clean_rel
 
-        # PULL
+        # --- PULL ---
         if mode in (SyncMode.PULL, SyncMode.BIDIRECTIONAL):
-            for path, r_info in remote_files.items():
-                l_info = local_files.get(path)
+            # Iteramos sobre o MAPA remoto
+            for path, r_info in remote_files_map.items():
+                l_info = local_files_map.get(path)
 
                 if not l_info or l_info.size != r_info.size:
                     if progress: progress(f"download:{path}", 0, r_info.size)
@@ -386,10 +399,10 @@ class SMBClient(FileSystemInterface):
                             lambda p, t, e=path: progress(f"download:{e}", p, t) if progress else None
                         )
 
-        # PUSH
+        # --- PUSH ---
         if mode in (SyncMode.PUSH, SyncMode.BIDIRECTIONAL):
-            for path, l_info in local_files.items():
-                r_info = remote_files.get(path)
+            for path, l_info in local_files_map.items():
+                r_info = remote_files_map.get(path)
 
                 if not r_info or r_info.size != l_info.size:
                     if progress: progress(f"upload:{path}", 0, l_info.size)

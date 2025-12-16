@@ -1,5 +1,5 @@
 from abc import abstractmethod, ABC
-from typing import Iterator, Optional
+from typing import Iterator, Optional, List
 from .types import ProgressCallback, SyncMode, SyncProgressCallback, FileInfo
 
 
@@ -53,7 +53,7 @@ class FileSystemInterface(ABC):
     def close(self):
         ...
 
-    def list_files_recursive(self, base_path: str) -> dict[str, FileInfo]:
+    def list_files_recursive(self, base_path: str) -> List[FileInfo]:
         ...
 
     @abstractmethod

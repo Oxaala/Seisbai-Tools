@@ -1,6 +1,6 @@
 import os
 import shutil
-from typing import Iterator, Optional, Dict
+from typing import Iterator, Optional, Dict, List
 
 from ...interface import FileSystemInterface
 from ...types import ProgressCallback, SyncMode, SyncProgressCallback, FileInfo
@@ -132,70 +132,69 @@ class NFSClient(FileSystemInterface):
                     progress_callback(processed, total)
                 yield chunk
 
-    # --------------------------------------------------
+    # ---------------
     # RECURSIVE LIST
-    # --------------------------------------------------
+    # ---------------
 
-    def list_files_recursive(self, base_path: str) -> Dict[str, FileInfo]:
+    def list_files_recursive(self, base_path: str) -> List[FileInfo]:
         """
         Lista todos os arquivos abaixo de base_path (relativo ao mount_point).
-
-        Retorna:
-            { "relative/path/file.ext": FileInfo }
+        Retorna uma Lista de FileInfo.
         """
         if not self.connected:
             raise RuntimeError("Not connected")
 
         base = self._full(base_path)
-        files: Dict[str, FileInfo] = {}
+        # Mudança: agora é uma lista
+        files: List[FileInfo] = []
 
         for root, _, filenames in os.walk(base):
             for name in filenames:
                 full = os.path.join(root, name)
+                # O replace garante consistência com a lógica do FileInfo
                 rel = os.path.relpath(full, base).replace("\\", "/")
+
                 try:
                     size = os.path.getsize(full)
-                    files[rel] = FileInfo(path=rel, size=size)
+                    # Mudança: append em vez de chave de dict
+                    files.append(FileInfo(path=rel, size=size))
                 except OSError:
+                    # Arquivo pode ter sido deletado durante o walk
                     pass
 
         return files
 
-    # --------------------------------------------------
+    # ---------
     # SYNC
-    # --------------------------------------------------
+    # ---------
 
     def sync(
-        self,
-        local_base: str,
-        remote_base: str,
-        mode: SyncMode = SyncMode.BIDIRECTIONAL,
-        chunk_size: int = 1024 * 1024,
-        progress: Optional[SyncProgressCallback] = None,
-        dry_run: bool = False
+            self,
+            local_base: str,
+            remote_base: str,
+            mode: SyncMode = SyncMode.BIDIRECTIONAL,
+            chunk_size: int = 1024 * 1024,
+            progress: Optional[SyncProgressCallback] = None,
+            dry_run: bool = False
     ):
-        """
-        Sincroniza local_base <-> remote_base (NFS)
-
-        progress(event, processed, total)
-            event: upload:path | download:path
-        """
         if not self.connected:
             raise RuntimeError("Not connected")
 
         local_base = os.path.abspath(local_base)
         os.makedirs(local_base, exist_ok=True)
 
-        # LOCAL
-        local_files: Dict[str, FileInfo] = {}
+        # 1. Mapeamento Local (Já convertemos para Dict para busca rápida)
+        local_files_map: Dict[str, FileInfo] = {}
         for root, _, files in os.walk(local_base):
             for f in files:
                 full = os.path.join(root, f)
                 rel = os.path.relpath(full, local_base).replace("\\", "/")
-                local_files[rel] = FileInfo(rel, os.path.getsize(full))
+                local_files_map[rel] = FileInfo(rel, os.path.getsize(full))
 
-        # REMOTE
-        remote_files = self.list_files_recursive(remote_base)
+        # 2. Mapeamento Remoto
+        # list_files_recursive retorna LISTA, convertemos para MAPA (Dict) aqui
+        remote_list = self.list_files_recursive(remote_base)
+        remote_files_map: Dict[str, FileInfo] = {f.path: f for f in remote_list}
 
         def lp(p: str) -> str:
             return os.path.join(local_base, p)
@@ -203,12 +202,15 @@ class NFSClient(FileSystemInterface):
         def rp(p: str) -> str:
             return os.path.join(remote_base, p).replace("\\", "/")
 
-        # PULL
+        # --- PULL ---
         if mode in (SyncMode.PULL, SyncMode.BIDIRECTIONAL):
-            for path, info in remote_files.items():
-                if path not in local_files or local_files[path].size != info.size:
+            for path, r_info in remote_files_map.items():
+                l_info = local_files_map.get(path)
+
+                # Se não existe localmente ou tamanho diferente
+                if not l_info or l_info.size != r_info.size:
                     if progress:
-                        progress(f"download:{path}", 0, info.size)
+                        progress(f"download:{path}", 0, r_info.size)
                     if not dry_run:
                         self.download(
                             rp(path),
@@ -218,12 +220,15 @@ class NFSClient(FileSystemInterface):
                             progress(f"download:{e}", p, t) if progress else None
                         )
 
-        # PUSH
+        # --- PUSH ---
         if mode in (SyncMode.PUSH, SyncMode.BIDIRECTIONAL):
-            for path, info in local_files.items():
-                if path not in remote_files or remote_files[path].size != info.size:
+            for path, l_info in local_files_map.items():
+                r_info = remote_files_map.get(path)
+
+                # Se não existe remotamente ou tamanho diferente
+                if not r_info or r_info.size != l_info.size:
                     if progress:
-                        progress(f"upload:{path}", 0, info.size)
+                        progress(f"upload:{path}", 0, l_info.size)
                     if not dry_run:
                         self.upload(
                             lp(path),
