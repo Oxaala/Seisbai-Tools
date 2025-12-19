@@ -1,4 +1,4 @@
-from .file_transaction_canceled_event import FileTransactionCanceledEvent #type: ignore
+from .file_transaction_cancelled_event import FileTransactionCancelledEvent #type: ignore
 from .file_transaction_completed_event import FileTransactionCompletedEvent #type: ignore
 from .file_transaction_failed_event import FileTransactionFailedEvent #type: ignore
 from .file_transaction_paused_event import FileTransactionPausedEvent #type: ignore

@@ -1,4 +1,4 @@
-from .fault_detection_canceled_event import FaultDetectionCanceledEvent #type:ignore
+from .fault_detection_cancelled_event import FaultDetectionCancelledEvent #type:ignore
 from .fault_detection_completed_event import FaultDetectionCompletedEvent #type:ignore
 from .fault_detection_failed_event import FaultDetectionFailedEvent #type:ignore
 from .fault_detection_paused_event import FaultDetectionPausedEvent #type:ignore

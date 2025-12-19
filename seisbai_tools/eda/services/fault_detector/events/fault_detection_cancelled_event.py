@@ -1,8 +1,8 @@
 from uuid import UUID
-from ....events import CanceledEvent
+from ....events import CancelledEvent
 
 
-class FaultDetectionCanceledEvent(CanceledEvent, frozen=True, kw_only=True):
+class FaultDetectionCancelledEvent(CancelledEvent, frozen=True, kw_only=True):
     """
     Evento emitido quando um job de detecção de falhas é cancelado antes da conclusão.
 

@@ -6,30 +6,23 @@ from ..DTOs import HorizonDetectionParamsDTO
 
 class RunHorizonDetectionCommand(StartCommand, frozen=True, kw_only=True):
     """
-    Comando para iniciar a execução de um job de detecção de horizontes.
+    Comando responsável por iniciar a execução de um job de detecção de horizontes.
 
-    Este comando herda de :class:`StartCommand` e encapsula os parâmetros necessários
-    para a execução do processo de detecção de horizontes em um dataset específico.
+    Este comando herda de :class:`StartCommand` e encapsula todos os parâmetros
+    necessários para realizar o processo de detecção em um dataset sísmico.
 
-    Atributos
-    ---------
+    Attributes
+    ----------
     dataset_id : UUID
-        Identificador único do dataset associado ao job de detecção de horizontes.
-        Gerado automaticamente com `uuid4()` caso não seja informado.
+        Identificador único que vincula este job ao dataset correspondente.
+        Caso não seja informado, é gerado automaticamente por meio de `uuid4()`.
 
     params : HorizonDetectionParamsDTO
-        Objeto que contém todos os parâmetros de configuração do processo de detecção.
-        Por padrão, é inicializado com valores mínimos e caminhos vazios, que devem ser
-        substituídos pelos corretos antes da execução real.
+        Estrutura contendo todos os parâmetros de configuração da detecção
+        de horizontes (como caminhos de entrada, modelo, máscara, threshold,
+        parâmetros de clusterização e diretório de saída).
+        É inicializado com valores padrão que devem ser substituídos de acordo
+        com o contexto real da execução.
     """
     dataset_id: UUID = field(default_factory=lambda: uuid4())
-    params: HorizonDetectionParamsDTO = field(default_factory=lambda: HorizonDetectionParamsDTO(
-        seismic_path="",
-        model_dir="",
-        model_name="",
-        mask_path="",
-        threshold=0.1,
-        eps=0.05,
-        min_points=50,
-        output_dir="output/horizons",
-    ))
+    params: HorizonDetectionParamsDTO = field(default_factory=HorizonDetectionParamsDTO)

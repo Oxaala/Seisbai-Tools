@@ -1,8 +1,8 @@
 from uuid import UUID
-from ....events import CanceledEvent
+from ....events import CancelledEvent
 
 
-class FileTransactionCanceledEvent(CanceledEvent, frozen=True, kw_only=True):
+class FileTransactionCancelledEvent(CancelledEvent, frozen=True, kw_only=True):
     """
     Evento que indica que uma transação de arquivos foi cancelada.
 

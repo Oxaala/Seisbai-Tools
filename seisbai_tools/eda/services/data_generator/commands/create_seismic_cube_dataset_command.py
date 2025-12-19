@@ -1,21 +1,35 @@
 from typing import Optional, Sequence, Tuple, Union
 from uuid import UUID, uuid4
 from msgspec import Struct, field
+
+from seisbai_tools.file_system.manager import FileSystemPathInfo
 from ....commands import StartCommand
-from ..DTOs import GaussianDeformationParamsDTO,FaultDeformationParamsDTO,PlanarDeformationParamsDTO,SeismicCubeParamsDTO
+from ..DTOs import (
+    GaussianDeformationParamsDTO,
+    FaultDeformationParamsDTO,
+    PlanarDeformationParamsDTO,
+    SeismicCubeParamsDTO,
+)
 
 
 class TransformationStep(Struct, frozen=True, kw_only=True):
     """
-    Representa uma etapa de transformação a ser aplicada no cubo sísmico.
+    Representa uma etapa do pipeline de transformações aplicadas ao cubo sísmico.
 
-    Attributes
-    ----------
+    Cada transformação contém:
+    - um identificador (`name`) que define sua categoria/implementação;
+    - um DTO (`params`) contendo os parâmetros específicos da transformação.
+
+    A estrutura é imutável (`frozen=True`) para garantir consistência durante a
+    execução do pipeline de geração.
+
+    Atributos
+    ---------
     name : str
-        Nome da transformação a ser aplicada. Deve corresponder a um dos
-        identificadores válidos definidos no pipeline de geração.
+        Nome ou identificador da transformação (ex.: "gaussian", "fault", "planar").
+
     params : Union[GaussianDeformationParamsDTO, PlanarDeformationParamsDTO, FaultDeformationParamsDTO]
-        Objeto DTO contendo os parâmetros específicos da transformação.
+        Instância do DTO contendo os parâmetros específicos da transformação.
     """
 
     name: str
@@ -26,42 +40,74 @@ class TransformationStep(Struct, frozen=True, kw_only=True):
     ]
 
 
-class CreateSeismicCubeDatasetCommand(StartCommand, frozen=True):
+class CreateSeismicCubeDatasetCommand(StartCommand, frozen=True, kw_only=True):
     """
     Comando que inicia a geração de um dataset de cubos sísmicos sintéticos.
 
-    Esse comando encapsula tanto os parâmetros operacionais (como diretório de
-    saída, dimensões e seed) quanto os parâmetros geológicos/sísmicos e um
-    pipeline opcional de transformações a serem aplicadas ao modelo.
+    O comando integra o fluxo EDA (Event-Driven Architecture) do Seisbai,
+    encapsulando todas as informações necessárias para que o worker responsável
+    execute a geração, aplique transformações estruturais e armazene os resultados.
 
-    Attributes
-    ----------
-    dataset_id : uuid.UUID
-        Identificador único do dataset (usado para correlação entre eventos).
-        Gerado automaticamente se não for fornecido.
-    output_dir : str, default="output"
-        Diretório de saída onde os arquivos gerados serão salvos.
+    Propósito
+    ---------
+    - Acionar o gerador de cubos sísmicos sintéticos.
+    - Transportar parâmetros físicos, estruturais e operacionais.
+    - Fornecer metadados (como seed e prefixo).
+    - Definir o pipeline opcional de transformações após a geração.
+    - Indicar o destino final dos arquivos (via `FileSystemPathInfo`).
+
+    Atributos
+    ---------
+    dataset_id : UUID, default=uuid4()
+        Identificador único para rastrear o job de geração do dataset.
+
     prefix : str, default="cube"
-        Prefixo usado para nomear os arquivos do dataset.
+        Prefixo base utilizado para nomear os arquivos gerados.
+
     samples : int, default=1
-        Número de amostras (cubos) a serem gerados.
+        Número de cubos sísmicos a serem gerados.
+
     dimensions : Tuple[int, int, int], default=(128, 128, 128)
-        Dimensões do cubo sísmico no formato (inline, xline, depth).
+        Dimensões do cubo no formato:
+            (inline, xline, depth)
+
     seed : Optional[int], default=None
-        Semente do gerador aleatório para garantir reprodutibilidade.
+        Semente para tornar o processo determinístico.
+
+    output_path : FileSystemPathInfo
+        Informações sobre o destino dos arquivos gerados
+        (ex.: filesystem local, SMB, NFS, etc.).
+
     seismic_params : SeismicCubeParamsDTO
-        Parâmetros físicos/geológicos utilizados pelo gerador de cubos sísmicos.
+        Parâmetros geofísicos do modelo sísmico (velocidade, camadas,
+        refletividade, frequência, sampling rate, etc.).
+
     transformations_pipeline : Sequence[TransformationStep], default=[]
-        Pipeline opcional de transformações (deformações, falhas, ruído etc.)
-        aplicadas sequencialmente ao cubo gerado.
+        Lista ordenada de transformações aplicadas após a geração inicial
+        do cubo sísmico.
+
+    Exemplo
+    -------
+    >>> CreateSeismicCubeDatasetCommand(
+    ...     samples=4,
+    ...     seed=123,
+    ...     dimensions=(256, 256, 256),
+    ...     output_path=FileSystemPathInfo(path="/data/cubes"),
+    ...     transformations_pipeline=[
+    ...         TransformationStep(
+    ...             name="gaussian",
+    ...             params=GaussianDeformationParamsDTO(amplitude=2.0)
+    ...         )
+    ...     ]
+    ... )
     """
 
     dataset_id: UUID = field(default_factory=lambda: uuid4())
-    output_dir: str = field(default="output")
     prefix: str = field(default="cube")
     samples: int = field(default=1)
     dimensions: Tuple[int, int, int] = field(default=(128, 128, 128))
     seed: Optional[int] = field(default=None)
+    output_path: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
 
     seismic_params: SeismicCubeParamsDTO = field(
         default_factory=lambda: SeismicCubeParamsDTO(
@@ -79,4 +125,6 @@ class CreateSeismicCubeDatasetCommand(StartCommand, frozen=True):
         )
     )
 
-    transformations_pipeline: Sequence[TransformationStep] = field(default_factory=list[TransformationStep])
+    transformations_pipeline: Sequence[TransformationStep] = field(
+        default_factory=list
+    )

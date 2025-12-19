@@ -1,8 +1,8 @@
 from uuid import UUID
-from ....events import CanceledEvent
+from ....events import CancelledEvent
 
 
-class NetworkConstructorCanceledEvent(CanceledEvent, frozen=True, kw_only=True):
+class NetworkConstructorCancelledEvent(CancelledEvent, frozen=True, kw_only=True):
     """
     Evento emitido quando a execução de um job de construção de rede é cancelada.
 
@@ -11,7 +11,7 @@ class NetworkConstructorCanceledEvent(CanceledEvent, frozen=True, kw_only=True):
     permitindo que os consumidores do evento ajustem seus estados ou
     interfaces conforme necessário.
 
-    Herda de :class:`CanceledEvent`.
+    Herda de :class:`CancelledEvent`.
 
     Atributos
     ---------

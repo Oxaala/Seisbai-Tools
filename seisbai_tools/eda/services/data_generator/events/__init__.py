@@ -1,4 +1,4 @@
-from .seismic_cube_dataset_generation_canceled_event import SeismicCubeDatasetGenerationCanceledEvent #type: ignore
+from .seismic_cube_dataset_generation_cancelled_event import SeismicCubeDatasetGenerationCancelledEvent #type: ignore
 from .seismic_cube_dataset_generation_completed_event import SeismicCubeDatasetGenerationCompletedEvent #type: ignore
 from .seismic_cube_dataset_generation_failed_event import SeismicCubeDatasetGenerationFailedEvent #type: ignore
 from .seismic_cube_dataset_generation_paused_event import SeismicCubeDatasetGenerationPausedEvent #type: ignore

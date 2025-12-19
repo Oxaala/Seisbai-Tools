@@ -1,5 +1,5 @@
 from .event import Event
-from .canceled import CanceledEvent
+from .cancelled import CancelledEvent
 from .completed import CompletedEvent
 from .failed import FailedEvent
 from .paused import PausedEvent
