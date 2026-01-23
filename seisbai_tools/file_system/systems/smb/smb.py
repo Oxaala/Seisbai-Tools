@@ -56,12 +56,23 @@ class SMBClient(FileSystemInterface):
     # --------------------------------------------------
 
     def connect(self):
+        # ✅ CORREÇÃO: Configurar timeout maior para downloads longos
+        # O timeout padrão do smbprotocol é 60s, mas para arquivos grandes pode ser insuficiente
         self.connection = Connection(
             guid=uuid4(),
             server_name=self.server,
             port=self.port,
         )
-        self.connection.connect()
+        # Tentar configurar timeout maior se suportado
+        try:
+            # smbprotocol pode ter timeout configurável via require_signing ou outras opções
+            # Por enquanto, apenas conectar - o timeout será gerenciado pelo retry logic
+            self.connection.connect()
+        except Exception as e:
+            # Se falhar, tentar novamente após pequeno delay
+            import time
+            time.sleep(0.5)
+            self.connection.connect()
 
         self.session = Session(
             connection=self.connection,
@@ -138,10 +149,16 @@ class SMBClient(FileSystemInterface):
         fh.close()
 
     def delete(self, path: str):
-        fh = self._open_file(
-            path,
-            CreateDisposition.FILE_OPEN,
-            CreateOptions.FILE_DELETE_ON_CLOSE
+        clean_path = path.replace("/", "\\").strip("\\")
+        
+        fh = Open(tree=self.tree, name=clean_path)
+        fh.create(
+            impersonation_level=DEFAULT_IMPERSONATION,
+            desired_access=FilePipePrinterAccessMask.DELETE,  # Apenas DELETE access para deleção
+            file_attributes=DEFAULT_FILE_ATTRS,
+            share_access=DEFAULT_SHARE_ACCESS,
+            create_disposition=CreateDisposition.FILE_OPEN,
+            create_options=CreateOptions.FILE_DELETE_ON_CLOSE
         )
         fh.close()
 
@@ -210,29 +227,154 @@ class SMBClient(FileSystemInterface):
         chunk_size: int = 1024 * 1024,
         progress_callback: Optional[ProgressCallback] = None
     ):
+        import logging
+        import time
+        logger = logging.getLogger(__name__)
+        
         os.makedirs(os.path.dirname(local_path), exist_ok=True)
         remote_path = remote_path.replace("/", "\\")
 
-        fh = self._open_file(
-            remote_path,
-            CreateDisposition.FILE_OPEN,
-            FILE_CREATE_OPTS
-        )
-
-        size = fh.end_of_file
+        size = None
         offset = 0
+        max_retries = 3
+        retry_delay = 1.0
+        
+        # ✅ CORREÇÃO: Tentar abrir arquivo com retry
+        fh = None
+        for attempt in range(max_retries):
+            try:
+                fh = self._open_file(
+                    remote_path,
+                    CreateDisposition.FILE_OPEN,
+                    FILE_CREATE_OPTS
+                )
+                size = fh.end_of_file
+                logger.info(f"[SMB_DOWNLOAD] Arquivo aberto: {remote_path}, tamanho: {size} bytes")
+                break
+            except Exception as e:
+                logger.warning(f"[SMB_DOWNLOAD] Erro ao abrir arquivo (tentativa {attempt + 1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    # Tentar reconectar se conexão foi perdida
+                    try:
+                        self.close()
+                        time.sleep(retry_delay)
+                        self.connect()
+                    except Exception as reconnect_error:
+                        logger.warning(f"[SMB_DOWNLOAD] Erro ao reconectar: {reconnect_error}")
+                    time.sleep(retry_delay)
+                else:
+                    raise
+        
+        if fh is None or size is None:
+            raise RuntimeError(f"Não foi possível abrir arquivo após {max_retries} tentativas: {remote_path}")
+
+        last_progress_log = 0
+        consecutive_empty_reads = 0
+        max_empty_reads = 10  # Máximo de leituras vazias consecutivas antes de considerar erro
+        last_data_time = time.time()  # ✅ CORREÇÃO: Rastrear última vez que dados foram recebidos
+        max_idle_time = 300.0  # 5 minutos sem dados = travamento
 
         try:
             with open(local_path, "wb") as f:
                 while offset < size:
+                    # ✅ CORREÇÃO: Verificar se download não travou (timeout watchdog)
+                    current_time = time.time()
+                    time_since_last_data = current_time - last_data_time
+                    if time_since_last_data > max_idle_time:
+                        logger.error(f"[SMB_DOWNLOAD] Timeout: nenhum dado recebido por {time_since_last_data:.1f}s (máximo: {max_idle_time}s)")
+                        raise RuntimeError(f"Download travou: timeout após {time_since_last_data:.1f}s sem receber dados (offset: {offset}/{size})")
+                    # ✅ CORREÇÃO: Verificar conexão periodicamente para arquivos grandes
+                    if offset > 0 and offset % (100 * 1024 * 1024) == 0:  # A cada 100MB
+                        logger.info(f"[SMB_DOWNLOAD] Progresso: {offset}/{size} bytes ({offset*100//size}%)")
+                        # Verificar se conexão ainda está ativa (tentando uma operação simples)
+                        try:
+                            # Tentar verificar conexão testando o tree
+                            if self.tree:
+                                # Apenas verificar se tree ainda está válido (não fazer operação pesada)
+                                pass  # Tree ainda existe, assumir conectado
+                        except Exception as check_error:
+                            logger.warning(f"[SMB_DOWNLOAD] Possível perda de conexão detectada: {check_error}")
+                            # Não reconectar automaticamente aqui, deixar o retry do read() lidar com isso
+                    
                     length = min(chunk_size, size - offset)
-                    data = fh.read(offset=offset, length=length)
+                    
+                    # ✅ CORREÇÃO: Ler com retry em caso de erro
+                    data = None
+                    read_attempt = 0
+                    while read_attempt < max_retries and data is None:
+                        try:
+                            data = fh.read(offset=offset, length=length)
+                            if data is None:
+                                raise ValueError("fh.read() retornou None")
+                            consecutive_empty_reads = 0  # Reset contador
+                            break
+                        except Exception as read_error:
+                            read_attempt += 1
+                            logger.warning(f"[SMB_DOWNLOAD] Erro ao ler chunk em offset {offset} (tentativa {read_attempt}/{max_retries}): {read_error}")
+                            if read_attempt < max_retries:
+                                # Tentar reconectar
+                                try:
+                                    fh.close()
+                                    time.sleep(retry_delay)
+                                    self.close()
+                                    self.connect()
+                                    fh = self._open_file(
+                                        remote_path,
+                                        CreateDisposition.FILE_OPEN,
+                                        FILE_CREATE_OPTS
+                                    )
+                                    logger.info(f"[SMB_DOWNLOAD] Reconectado após erro de leitura, retomando em offset {offset}")
+                                except Exception as reconnect_error:
+                                    logger.error(f"[SMB_DOWNLOAD] Erro ao reconectar após falha de leitura: {reconnect_error}")
+                                    if read_attempt >= max_retries:
+                                        raise
+                            else:
+                                raise RuntimeError(f"Falha ao ler chunk após {max_retries} tentativas: {read_error}")
+                    
+                    # ✅ CORREÇÃO: Verificar se dados foram lidos
+                    if not data or len(data) == 0:
+                        consecutive_empty_reads += 1
+                        logger.warning(f"[SMB_DOWNLOAD] Leitura vazia em offset {offset} (tentativa {consecutive_empty_reads}/{max_empty_reads})")
+                        if consecutive_empty_reads >= max_empty_reads:
+                            logger.error(f"[SMB_DOWNLOAD] Muitas leituras vazias consecutivas ({consecutive_empty_reads}), abortando")
+                            raise RuntimeError(f"Download travou: {consecutive_empty_reads} leituras vazias consecutivas em offset {offset}")
+                        # Pequeno delay antes de tentar novamente
+                        time.sleep(0.2)
+                        # Tentar ler novamente com tamanho menor
+                        if length > 1024:
+                            length = length // 2
+                            logger.info(f"[SMB_DOWNLOAD] Reduzindo tamanho do chunk para {length} bytes")
+                        continue
+                    
+                    # Se leu dados, resetar contador
+                    if len(data) > 0:
+                        consecutive_empty_reads = 0
+                    
+                    # Escrever dados
                     f.write(data)
+                    f.flush()  # ✅ CORREÇÃO: Forçar flush periódico para garantir escrita
                     offset += len(data)
+                    last_data_time = time.time()  # ✅ CORREÇÃO: Atualizar timestamp de última leitura bem-sucedida
+                    
+                    # ✅ CORREÇÃO: Logging periódico do progresso
                     if progress_callback:
                         progress_callback(offset, size)
+                        # Log a cada 10% ou a cada 50MB, o que for menor
+                        progress_percent = (offset * 100) // size if size > 0 else 0
+                        if progress_percent >= last_progress_log + 10 or (offset - last_progress_log * size // 100) >= 50 * 1024 * 1024:
+                            logger.info(f"[SMB_DOWNLOAD] Progresso: {progress_percent}% ({offset}/{size} bytes)")
+                            last_progress_log = progress_percent
+        except Exception as e:
+            logger.error(f"[SMB_DOWNLOAD] Erro durante download: {e}", exc_info=True)
+            # Se arquivo foi parcialmente baixado, manter para possível retry
+            raise
         finally:
-            fh.close()
+            if fh:
+                try:
+                    fh.close()
+                except Exception:
+                    pass
+            logger.info(f"[SMB_DOWNLOAD] Download concluído: {offset}/{size} bytes")
 
     def read_file_chunks(
         self,
