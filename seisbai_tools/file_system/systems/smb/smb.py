@@ -149,10 +149,16 @@ class SMBClient(FileSystemInterface):
         fh.close()
 
     def delete(self, path: str):
-        fh = self._open_file(
-            path,
-            CreateDisposition.FILE_OPEN,
-            CreateOptions.FILE_DELETE_ON_CLOSE
+        clean_path = path.replace("/", "\\").strip("\\")
+        
+        fh = Open(tree=self.tree, name=clean_path)
+        fh.create(
+            impersonation_level=DEFAULT_IMPERSONATION,
+            desired_access=FilePipePrinterAccessMask.DELETE,  # Apenas DELETE access para deleção
+            file_attributes=DEFAULT_FILE_ATTRS,
+            share_access=DEFAULT_SHARE_ACCESS,
+            create_disposition=CreateDisposition.FILE_OPEN,
+            create_options=CreateOptions.FILE_DELETE_ON_CLOSE
         )
         fh.close()
 
