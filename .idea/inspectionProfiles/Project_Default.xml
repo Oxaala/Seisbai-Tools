@@ -1,0 +1,72 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="Eslint" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyCompatibilityInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ourVersions">
+        <value>
+          <list size="2">
+            <item index="0" class="java.lang.String" itemvalue="3.13" />
+            <item index="1" class="java.lang.String" itemvalue="3.9" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="numpy" />
+          <option value="scipy" />
+          <option value="pandas" />
+          <option value="xarray" />
+          <option value="matplotlib" />
+          <option value="seaborn" />
+          <option value="plotly" />
+          <option value="PyQt6" />
+          <option value="PyQt6-WebEngine" />
+          <option value="pyqtgraph" />
+          <option value="vispy" />
+          <option value="pyqtdarktheme" />
+          <option value="QtPy" />
+          <option value="segyio" />
+          <option value="h5py" />
+          <option value="h5netcdf" />
+          <option value="lasio" />
+          <option value="opencv-python" />
+          <option value="pyvista" />
+          <option value="vtk" />
+          <option value="segysak" />
+          <option value="bruges" />
+          <option value="pypubsub" />
+          <option value="websockets" />
+          <option value="black" />
+          <option value="flake8" />
+          <option value="mypy" />
+          <option value="pytest" />
+          <option value="python-dotenv" />
+          <option value="tqdm" />
+          <option value="python-dateutil" />
+          <option value="PyYAML" />
+          <option value="pillow" />
+          <option value="deep_translator" />
+          <option value="msgspec" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8NamingInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="N803" />
+          <option value="N806" />
+        </list>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="Dimensions" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

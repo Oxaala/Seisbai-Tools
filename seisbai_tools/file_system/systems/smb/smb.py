@@ -14,7 +14,7 @@ from smbprotocol.open import (
     FilePipePrinterAccessMask,
     ShareAccess
 )
-from smbprotocol.file_info import FileInformationClass
+from smbprotocol.file_info import FileInformationClass, FileDispositionInformation
 
 # Importe apenas o RemoteFileInfo, esqueça o FileInfo
 from seisbai_tools.file_system.interface import FileSystemInterface
@@ -150,17 +150,40 @@ class SMBClient(FileSystemInterface):
 
     def delete(self, path: str):
         clean_path = path.replace("/", "\\").strip("\\")
-        
-        fh = Open(tree=self.tree, name=clean_path)
-        fh.create(
-            impersonation_level=DEFAULT_IMPERSONATION,
-            desired_access=FilePipePrinterAccessMask.DELETE,  # Apenas DELETE access para deleção
-            file_attributes=DEFAULT_FILE_ATTRS,
-            share_access=DEFAULT_SHARE_ACCESS,
-            create_disposition=CreateDisposition.FILE_OPEN,
-            create_options=CreateOptions.FILE_DELETE_ON_CLOSE
-        )
-        fh.close()
+
+        try:
+            fh = Open(tree=self.tree, name=clean_path)
+            fh.create(
+                impersonation_level=DEFAULT_IMPERSONATION,
+                desired_access=FilePipePrinterAccessMask.DELETE,  # Apenas DELETE access para deleção
+                file_attributes=DEFAULT_FILE_ATTRS,
+                share_access=DEFAULT_SHARE_ACCESS,
+                create_disposition=CreateDisposition.FILE_OPEN,
+                create_options=CreateOptions.FILE_NON_DIRECTORY_FILE | CreateOptions.FILE_DELETE_ON_CLOSE,
+            )
+            fh.close()
+            return
+        except Exception:
+            # Fallback: alguns servidores rejeitam FILE_DELETE_ON_CLOSE sem flag de arquivo.
+            # Tenta marcar delete_pending via set_info.
+            fh = Open(tree=self.tree, name=clean_path)
+            fh.create(
+                impersonation_level=DEFAULT_IMPERSONATION,
+                desired_access=FilePipePrinterAccessMask.DELETE,
+                file_attributes=DEFAULT_FILE_ATTRS,
+                share_access=DEFAULT_SHARE_ACCESS,
+                create_disposition=CreateDisposition.FILE_OPEN,
+                create_options=CreateOptions.FILE_NON_DIRECTORY_FILE,
+            )
+            try:
+                disposition_info = FileDispositionInformation()
+                disposition_info["delete_pending"] = True
+                fh.set_info(
+                    disposition_info,
+                    FileInformationClass.FILE_DISPOSITION_INFORMATION,
+                )
+            finally:
+                fh.close()
 
     def listdir(self, path=""):
         fh = self._open_file(
@@ -198,25 +221,24 @@ class SMBClient(FileSystemInterface):
         self._ensure_remote_dirs(remote_path)
         remote_path = remote_path.replace("/", "\\")
 
-        with open(local_path, "rb") as f:
-            data = f.read()
-
         fh = self._open_file(
             remote_path,
             CreateDisposition.FILE_OVERWRITE_IF,
             FILE_CREATE_OPTS
         )
 
-        total = len(data)
-        offset = 0
-
         try:
-            while offset < total:
-                size = min(chunk_size, total - offset)
-                fh.write(data[offset:offset + size], offset)
-                offset += size
-                if progress_callback:
-                    progress_callback(offset, total)
+            total = os.path.getsize(local_path)
+            offset = 0
+            with open(local_path, "rb") as f:
+                while True:
+                    data = f.read(chunk_size)
+                    if not data:
+                        break
+                    fh.write(data, offset)
+                    offset += len(data)
+                    if progress_callback:
+                        progress_callback(offset, total)
         finally:
             fh.close()
 
