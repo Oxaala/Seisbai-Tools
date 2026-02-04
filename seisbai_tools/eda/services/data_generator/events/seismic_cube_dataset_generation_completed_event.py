@@ -1,6 +1,7 @@
 from seisbai_tools.file_system.manager import FileSystemPathInfo
 from ....events import CompletedEvent
 from uuid import UUID
+from msgspec import field
 
 
 class SeismicCubeDatasetGenerationCompletedEvent(CompletedEvent, frozen=True, kw_only=True):
@@ -23,6 +24,9 @@ class SeismicCubeDatasetGenerationCompletedEvent(CompletedEvent, frozen=True, kw
         Informações sobre o destino onde os cubos foram gravados, incluindo
         caminho e metadados fornecidos pelo backend de arquivo (local, SMB,
         NFS, S3, etc.).
+    
+    generated_files : list[str], default=[]
+        Lista de caminhos dos arquivos gerados (opcional, para facilitar registro automático).
 
     Notes
     -----
@@ -40,5 +44,7 @@ class SeismicCubeDatasetGenerationCompletedEvent(CompletedEvent, frozen=True, kw
     ...     output_path=FileSystemPathInfo(path="/datasets/synthetics/cube001")
     ... )
     """
+    from msgspec import field
     dataset_id: UUID
     output_path: FileSystemPathInfo
+    generated_files: list[str] = field(default_factory=list)
