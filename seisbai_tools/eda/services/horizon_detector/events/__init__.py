@@ -1,4 +1,4 @@
-from .horizon_detection_canceled import HorizonDetectionCanceledEvent #type: ignore
+from .horizon_detection_cancelled import HorizonDetectionCancelledEvent #type: ignore
 from .horizon_detection_completed import HorizonDetectionCompletedEvent #type: ignore
 from .horizon_detection_failed import HorizonDetectionFailedEvent #type: ignore
 from .horizon_detection_paused import HorizonDetectionPausedEvent #type: ignore

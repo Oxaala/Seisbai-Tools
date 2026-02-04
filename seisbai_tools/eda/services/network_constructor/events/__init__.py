@@ -1,6 +1,6 @@
 from .network_constructor_paused_event import NetworkConstructorPausedEvent #type: ignore
 from .network_constructor_started_event import NetworkConstructorStartedEvent #type: ignore
-from .network_constructor_canceled_event import NetworkConstructorCanceledEvent #type: ignore
+from .network_constructor_cancelled_event import NetworkConstructorCancelledEvent #type: ignore
 from .network_constructor_resumed_event import NetworkConstructorResumedEvent #type: ignore
 from .network_constructor_failed_event import NetworkConstructorFailedEvent #type: ignore
 from .network_constructor_finished_event import NetworkConstructorCompletedEvent #type: ignore

@@ -24,7 +24,4 @@ class RunFaultDetectionCommand(StartCommand, frozen=True, kw_only=True):
     """
     dataset_id: UUID = field(default_factory=lambda: uuid4())
 
-    params: FaultDetectionParamsDTO = field(default_factory=lambda: FaultDetectionParamsDTO(
-        seismic_path="",
-        model_path="",
-    ))
+    params: FaultDetectionParamsDTO = field(default_factory=FaultDetectionParamsDTO)
