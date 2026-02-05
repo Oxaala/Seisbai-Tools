@@ -1,4 +1,8 @@
 from .cancel_seismic_cube_dataset_generation_command import CancelSeismicCubeDatasetGenerationCommand #type: ignore
 from .create_seismic_cube_dataset_command import CreateSeismicCubeDatasetCommand, TransformationStep #type: ignore
+from .create_synthetic_data_generator_dataset_command import CreateSyntheticDataGeneratorDatasetCommand #type: ignore
 from .pause_seismic_cube_dataset_generation_command import PauseSeismicCubeDatasetGenerationCommand #type: ignore
 from .resume_seismic_cube_dataset_generation_command import ResumeSeismicCubeDatasetGenerationCommand #type: ignore
+
+# Mantido para compatibilidade com código legado
+from .create_synthetic_data_generator_dataset_command import CreateSyntheticDataGeneratorDatasetCommand as CreateStandaloneDatasetCommand #type: ignore
