@@ -14,6 +14,14 @@ def serialize(obj: Any) -> bytes:
             return {"__type__": "UUID", "value": str(o)}
         if isinstance(o, datetime):
             return {"__type__": "datetime", "value": o.isoformat()}
+        
+        # numpy arrays - converter para lista
+        try:
+            import numpy as np
+            if isinstance(o, np.ndarray):
+                return {"__type__": "numpy.ndarray", "value": o.tolist(), "shape": list(o.shape), "dtype": str(o.dtype)}
+        except ImportError:
+            pass
 
         # msgspec.Struct
         if isinstance(o, msgspec.Struct):
