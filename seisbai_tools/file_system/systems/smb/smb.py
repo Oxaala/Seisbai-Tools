@@ -12,9 +12,14 @@ from smbprotocol.open import (
     ImpersonationLevel,
     FileAttributes,
     FilePipePrinterAccessMask,
-    ShareAccess
+    ShareAccess,
+    SMB2SetInfoRequest,
 )
-from smbprotocol.file_info import FileInformationClass
+from smbprotocol.file_info import (
+    FileInformationClass,
+    FileDispositionInformation,
+    InfoType,
+)
 
 # Importe apenas o RemoteFileInfo, esqueça o FileInfo
 from seisbai_tools.file_system.interface import FileSystemInterface
@@ -149,12 +154,36 @@ class SMBClient(FileSystemInterface):
         fh.close()
 
     def delete(self, path: str):
-        fh = self._open_file(
-            path,
-            CreateDisposition.FILE_OPEN,
-            CreateOptions.FILE_DELETE_ON_CLOSE
+        """Delete file via SetInfo(FILE_DISPOSITION_INFORMATION). FILE_DELETE_ON_CLOSE
+        causes STATUS_INVALID_PARAMETER on Samba and some Windows servers.
+        Open() in smbprotocol has no set_info(); we send SMB2 SET_INFO manually."""
+        clean_path = path.replace("/", "\\").strip("\\")
+        delete_access = FilePipePrinterAccessMask.DELETE | FilePipePrinterAccessMask.SYNCHRONIZE
+        fh = Open(tree=self.tree, name=clean_path)
+        fh.create(
+            impersonation_level=DEFAULT_IMPERSONATION,
+            desired_access=delete_access,
+            file_attributes=DEFAULT_FILE_ATTRS,
+            share_access=DEFAULT_SHARE_ACCESS,
+            create_disposition=CreateDisposition.FILE_OPEN,
+            create_options=CreateOptions.FILE_NON_DIRECTORY_FILE,
         )
-        fh.close()
+        try:
+            disposition = FileDispositionInformation()
+            disposition["delete_pending"] = True
+            req = SMB2SetInfoRequest()
+            req["info_type"] = InfoType.SMB2_0_INFO_FILE
+            req["file_info_class"] = FileInformationClass.FILE_DISPOSITION_INFORMATION
+            req["file_id"] = fh.file_id
+            req["buffer"] = disposition.pack()
+            r = fh.connection.send(
+                req,
+                fh.tree_connect.session.session_id,
+                fh.tree_connect.tree_connect_id,
+            )
+            fh.connection.receive(r)
+        finally:
+            fh.close()
 
     def listdir(self, path=""):
         fh = self._open_file(
@@ -304,9 +333,14 @@ class SMBClient(FileSystemInterface):
                             break
                         except Exception as read_error:
                             read_attempt += 1
+                            err_str = str(read_error)
+                            # Tree/session inválida: não reconectar aqui (conexão é compartilhada);
+                            # deixar o app invalidar e reconectar na main thread.
+                            if "Cannot find Tree" in err_str or "session tree table" in err_str:
+                                logger.warning("[SMB_DOWNLOAD] Conexão SMB inválida (tree/session); falhando para app reconectar.")
+                                raise RuntimeError(f"Falha ao ler chunk após {max_retries} tentativas: {read_error}")
                             logger.warning(f"[SMB_DOWNLOAD] Erro ao ler chunk em offset {offset} (tentativa {read_attempt}/{max_retries}): {read_error}")
                             if read_attempt < max_retries:
-                                # Tentar reconectar
                                 try:
                                     fh.close()
                                     time.sleep(retry_delay)
