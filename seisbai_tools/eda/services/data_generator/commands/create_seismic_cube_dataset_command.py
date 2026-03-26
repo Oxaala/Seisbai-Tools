@@ -2,7 +2,7 @@ from typing import Optional, Sequence, Tuple, Union
 from uuid import UUID, uuid4
 from msgspec import Struct, field
 
-from seisbai_tools.file_system.manager import FileSystemPathInfo
+from seisbai_tools.file_system.manager import FileSystemConfig, FileSystemPathInfo
 from ....commands import StartCommand
 from ..DTOs import (
     GaussianDeformationParamsDTO,
@@ -78,6 +78,9 @@ class CreateSeismicCubeDatasetCommand(StartCommand, frozen=True, kw_only=True):
         Informações sobre o destino dos arquivos gerados
         (ex.: filesystem local, SMB, NFS, etc.).
 
+    file_system : FileSystemConfig
+        Configuração do backend usada para resolver `output_path`.
+
     seismic_params : SeismicCubeParamsDTO
         Parâmetros geofísicos do modelo sísmico (velocidade, camadas,
         refletividade, frequência, sampling rate, etc.).
@@ -108,6 +111,7 @@ class CreateSeismicCubeDatasetCommand(StartCommand, frozen=True, kw_only=True):
     dimensions: Tuple[int, int, int] = field(default=(128, 128, 128))
     seed: Optional[int] = field(default=None)
     output_path: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
+    file_system: FileSystemConfig = field(default_factory=FileSystemConfig)
 
     seismic_params: SeismicCubeParamsDTO = field(
         default_factory=lambda: SeismicCubeParamsDTO(

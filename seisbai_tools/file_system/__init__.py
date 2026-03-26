@@ -1,1 +1,1 @@
-from .manager import FileSystemManager
+from .manager import FileSystemConfig, FileSystemManager, FileSystemPathInfo
