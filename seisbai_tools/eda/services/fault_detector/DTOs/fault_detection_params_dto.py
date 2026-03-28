@@ -1,7 +1,7 @@
 from typing import Dict, List, Tuple
 from msgspec import Struct, field
 
-from seisbai_tools.file_system.manager import FileSystemPathInfo
+from seisbai_tools.file_system.manager import FileSystemConfig, FileSystemPathInfo
 
 
 class FaultDetectionParamsDTO(Struct, frozen=True, tag=True):
@@ -41,6 +41,10 @@ class FaultDetectionParamsDTO(Struct, frozen=True, tag=True):
     output_path : FileSystemPathInfo
         Diretório ou caminho abstrato onde os resultados da detecção serão
         salvos, respeitando o backend do sistema de arquivos (local, SMB, S3 etc.).
+
+    file_system : FileSystemConfig
+        Configuração do backend que deve ser usada para resolver os caminhos
+        do request durante o processamento.
     """
 
     seismic_path: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
@@ -58,3 +62,4 @@ class FaultDetectionParamsDTO(Struct, frozen=True, tag=True):
     )
 
     output_path: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
+    file_system: FileSystemConfig = field(default_factory=FileSystemConfig)

@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Tuple
 from msgspec import Struct, field
 
-from seisbai_tools.file_system.manager import FileSystemPathInfo
+from seisbai_tools.file_system.manager import FileSystemConfig, FileSystemPathInfo
 
 
 class NetworkConstructorParamsDTO(Struct, frozen=True, tag=True):
@@ -59,10 +59,14 @@ class NetworkConstructorParamsDTO(Struct, frozen=True, tag=True):
     model_params : Dict[str, Any], default={}
         Parâmetros adicionais específicos do modelo definido em `model_type`.
         Exemplo: número de filtros, profundidade da U-Net, kernel_size etc.
+
+    file_system : FileSystemConfig
+        Configuração do backend usada para resolver `dataset` e `output`.
     """
     # Caminhos e I/O
     output: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
     dataset: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
+    file_system: FileSystemConfig = field(default_factory=FileSystemConfig)
 
     # Seleção de modelo e config
     model_type: str = "unet"

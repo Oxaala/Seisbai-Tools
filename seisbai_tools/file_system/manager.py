@@ -28,6 +28,20 @@ class FileSystemPathInfo(Struct, tag=True):
 
 
 # -------------------------------------------------
+class FileSystemConfig(Struct, tag=True):
+    fs_type: str = field(default="")
+    fs_host: str = field(default="")
+    fs_port: int = field(default=0)
+    fs_user: str = field(default="")
+    fs_password: str = field(default="")
+    fs_share: str = field(default="")
+    fs_path: str = field(default="")
+
+    def normalized_type(self) -> str:
+        return self.fs_type.strip().lower()
+
+
+# -------------------------------------------------
 class FileSystemManager(FileSystemInterface):
     """
     Fachada de alto nível para qualquer backend de filesystem.

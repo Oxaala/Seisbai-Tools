@@ -1,5 +1,5 @@
 from msgspec import Struct, field
-from seisbai_tools.file_system.manager import FileSystemPathInfo
+from seisbai_tools.file_system.manager import FileSystemConfig, FileSystemPathInfo
 
 
 class HorizonDetectionParamsDTO(Struct, frozen=True, kw_only=True, tag=True):
@@ -32,6 +32,10 @@ class HorizonDetectionParamsDTO(Struct, frozen=True, kw_only=True, tag=True):
 
     output_path : FileSystemPathInfo
         Diretório onde os horizontes detectados e artefatos intermediários serão salvos.
+
+    file_system : FileSystemConfig
+        Configuração do backend usada para resolver `seismic_path`, `model_path`,
+        `mask_path` e `output_path` durante a execução.
     """
 
     seismic_path: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
@@ -41,3 +45,4 @@ class HorizonDetectionParamsDTO(Struct, frozen=True, kw_only=True, tag=True):
     eps: float = 0.05
     min_points: int = 50
     output_path: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
+    file_system: FileSystemConfig = field(default_factory=FileSystemConfig)

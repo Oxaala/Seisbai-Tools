@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional
 from uuid import UUID, uuid4
 from msgspec import Struct, field
 
-from seisbai_tools.file_system.manager import FileSystemPathInfo
+from seisbai_tools.file_system.manager import FileSystemConfig, FileSystemPathInfo
 from ....commands import StartCommand
 
 
@@ -31,6 +31,9 @@ class CreateSyntheticDataGeneratorDatasetCommand(StartCommand, frozen=True, kw_o
     
     output_path : FileSystemPathInfo
         Informações sobre o destino dos arquivos gerados.
+
+    file_system : FileSystemConfig
+        Configuração do backend usada para resolver `output_path`.
     
     synthetic_data_generator_config : Dict[str, Any]
         Configuração completa coletada dos steps do SyntheticDataGenerator.
@@ -46,6 +49,7 @@ class CreateSyntheticDataGeneratorDatasetCommand(StartCommand, frozen=True, kw_o
     prefix: str = field(default="dataset")
     num_samples: int = field(default=1)
     output_path: FileSystemPathInfo = field(default_factory=FileSystemPathInfo)
+    file_system: FileSystemConfig = field(default_factory=FileSystemConfig)
     synthetic_data_generator_config: Dict[str, Any] = field(default_factory=dict)
     synthetic_data_generator_data: Dict[str, Any] = field(default_factory=dict)
 
