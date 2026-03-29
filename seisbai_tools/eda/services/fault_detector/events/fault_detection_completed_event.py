@@ -1,5 +1,6 @@
 from typing import List
 from uuid import UUID
+from msgspec import field
 
 from seisbai_tools.file_system.manager import FileSystemPathInfo
 from ....events import CompletedEvent
@@ -30,3 +31,4 @@ class FaultDetectionCompletedEvent(CompletedEvent, frozen=True, kw_only=True):
 
     dataset_id: UUID
     output_path: FileSystemPathInfo
+    output_paths: List[str] = field(default_factory=list)
